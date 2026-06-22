@@ -32,20 +32,24 @@ Copy `.env.example` to `.env` and fill in the values you need:
 ```bash
 TELEGRAM_BOT_TOKEN=
 AI_CREATOR_PROVIDER=
+AI_GENERATION_TIMEOUT_SECONDS=120
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-sonnet-4-6
+ANTHROPIC_MAX_TOKENS=8000
 ```
 
 Environment variables:
 
 - `TELEGRAM_BOT_TOKEN`: required Telegram bot token from BotFather.
 - `AI_CREATOR_PROVIDER`: optional AI provider. Supported values are `openai` and `anthropic`.
+- `AI_GENERATION_TIMEOUT_SECONDS`: optional timeout for AI project generation before falling back to templates.
 - `OPENAI_API_KEY`: required only when `AI_CREATOR_PROVIDER=openai`.
 - `OPENAI_MODEL`: optional OpenAI model override.
 - `ANTHROPIC_API_KEY`: required only when `AI_CREATOR_PROVIDER=anthropic`.
 - `ANTHROPIC_MODEL`: optional Anthropic model override.
+- `ANTHROPIC_MAX_TOKENS`: optional max output token limit for Anthropic generation.
 
 If no AI provider is configured, AI Creator uses built-in templates.
 

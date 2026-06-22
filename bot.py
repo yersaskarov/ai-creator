@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 MAX_CUSTOM_IDEA_LENGTH = 1500
 MAX_PROJECT_NAME_LENGTH = 80
+DEFAULT_AI_GENERATION_TIMEOUT_SECONDS = 120
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
@@ -37,7 +38,23 @@ dp = Dispatcher(storage=MemoryStorage())
 
 BASE_DIR = Path(__file__).parent
 GENERATED_DIR = BASE_DIR / "generated_projects"
-AI_GENERATION_TIMEOUT_SECONDS = 45
+
+
+def get_int_env(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if not value:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning("Invalid integer value for %s; using default %s", name, default)
+        return default
+
+
+AI_GENERATION_TIMEOUT_SECONDS = get_int_env(
+    "AI_GENERATION_TIMEOUT_SECONDS",
+    DEFAULT_AI_GENERATION_TIMEOUT_SECONDS,
+)
 
 
 def keyboard(buttons: list[str]) -> ReplyKeyboardMarkup:

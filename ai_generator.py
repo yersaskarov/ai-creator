@@ -53,6 +53,22 @@ def _build_generation_prompt(data: dict[str, Any]) -> str:
 
 Верни СТРОГО JSON без markdown и без пояснений.
 
+Ограничения размера:
+- Генерируй MVP starter project, а не большой production-проект.
+- Максимум 8 файлов.
+- Каждый файл до 200 строк.
+- README.md максимум 120 строк.
+- Без длинных комментариев и больших обучающих текстов.
+- Код должен быть рабочий, но компактный.
+- Ответ должен быть коротким и помещаться в один валидный JSON.
+- Не добавляй markdown вокруг JSON и не добавляй пояснения вне JSON.
+
+Если язык JavaScript / TypeScript:
+- Не генерируй большой TypeScript-проект.
+- Сделай минимальный Node.js starter.
+- Используй только package.json, main.js, .env.example, README.md и prompts/*.
+- Не добавляй tsconfig, src/, tests/, Dockerfile, lock-файлы и лишние конфиги.
+
 Формат:
 {{
   "files": {{
@@ -73,7 +89,7 @@ def _build_generation_prompt(data: dict[str, Any]) -> str:
 4. Если это Telegram-бот на Python, используй aiogram 3.
 5. Если выбраны GPT/Claude, добавь отдельный файл ai_client.py.
 6. README должен объяснять запуск пошагово.
-7. Для новичка добавь больше комментариев в коде.
+7. Для новичка добавь только короткие полезные комментарии.
 8. Не добавляй markdown вокруг JSON.
 """
 
