@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import asyncio
+import logging
 import shutil
 import zipfile
 from pathlib import Path
@@ -17,6 +18,12 @@ import templates
 import ai_generator
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+MAX_CUSTOM_IDEA_LENGTH = 1500
+MAX_PROJECT_NAME_LENGTH = 80
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
@@ -118,7 +125,15 @@ async def set_project_type(message: types.Message, state: FSMContext):
 
 @dp.message(Survey.custom_idea)
 async def set_custom_idea(message: types.Message, state: FSMContext):
-    await state.update_data(custom_idea=message.text)
+    custom_idea = message.text or ""
+    if len(custom_idea) > MAX_CUSTOM_IDEA_LENGTH:
+        await message.answer(
+            f"Описание идеи слишком длинное. Максимум {MAX_CUSTOM_IDEA_LENGTH} символов. "
+            "Пожалуйста, сократите текст и отправьте ещё раз."
+        )
+        return
+
+    await state.update_data(custom_idea=custom_idea)
     await state.set_state(Survey.goal)
     await message.answer(
         "Какую главную задачу решает эта идея?",
@@ -289,7 +304,15 @@ def format_files_list(files: dict[str, str]) -> str:
 
 @dp.message(Survey.project_name)
 async def finish_survey(message: types.Message, state: FSMContext):
-    await state.update_data(project_name=message.text)
+    project_name = message.text or ""
+    if len(project_name) > MAX_PROJECT_NAME_LENGTH:
+        await message.answer(
+            f"Название проекта слишком длинное. Максимум {MAX_PROJECT_NAME_LENGTH} символов. "
+            "Пожалуйста, отправьте более короткое название."
+        )
+        return
+
+    await state.update_data(project_name=project_name)
     data = await state.get_data()
 
     safe_name = make_safe_filename(data["project_name"])
@@ -297,6 +320,7 @@ async def finish_survey(message: types.Message, state: FSMContext):
 
     user_dir = GENERATED_DIR / str(user_id)
     project_dir = user_dir / safe_name
+    zip_path = user_dir / f"{safe_name}.zip"
 
     if project_dir.exists():
         shutil.rmtree(project_dir)
@@ -307,58 +331,67 @@ async def finish_survey(message: types.Message, state: FSMContext):
     generation_mode = "template"
 
     try:
-        ai_files = await ai_generator.generate_project_files(data)
-    except Exception as error:
-        print(f"AI generation failed: {error}")
-        ai_files = None
+        try:
+            ai_files = await ai_generator.generate_project_files(data)
+        except Exception:
+            logger.exception("AI generation failed")
+            ai_files = None
 
-    if ai_files:
-        files = ai_files
-        generation_mode = "AI"
-    else:
-        files = build_static_files(data)
+        if ai_files:
+            files = ai_files
+            generation_mode = "AI"
+        else:
+            files = build_static_files(data)
 
-    write_files(project_dir, files)
+        write_files(project_dir, files)
 
-    zip_path = user_dir / f"{safe_name}.zip"
-    if zip_path.exists():
-        zip_path.unlink()
+        if zip_path.exists():
+            zip_path.unlink()
 
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for file in project_dir.rglob("*"):
-            if file.is_file():
-                zipf.write(file, arcname=file.relative_to(project_dir.parent))
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for file in project_dir.rglob("*"):
+                if file.is_file():
+                    zipf.write(file, arcname=file.relative_to(project_dir.parent))
 
-    await message.answer_document(
-        FSInputFile(zip_path),
-        caption=f"📦 Готов проект «{data['project_name']}»",
-    )
+        await message.answer_document(
+            FSInputFile(zip_path),
+            caption=f"📦 Готов проект «{data['project_name']}»",
+        )
 
-    custom_idea = data.get("custom_idea") or "—"
-    files_list = format_files_list(files)
+        if zip_path.exists():
+            zip_path.unlink()
 
-    summary = (
-        "📦 Проект создан\n\n"
-        f"Название: {data['project_name']}\n"
-        f"Тип: {data['project_type']}\n"
-        f"Идея: {custom_idea}\n"
-        f"Задача: {data['goal']}\n"
-        f"Уровень: {data['experience']}\n"
-        f"Модель: {data['model']}\n"
-        f"Язык: {data['language']}\n"
-        f"Хостинг: {data['hosting']}\n"
-        f"Режим: {generation_mode}\n\n"
-        "Что внутри:\n"
-        f"{files_list}\n\n"
-        "Если режим template — значит AI-ключ не настроен или генерация упала, "
-        "и бот использовал безопасный шаблон.\n\n"
-        "Напишите /start, чтобы собрать ещё один проект."
-    )
+        custom_idea = data.get("custom_idea") or "—"
+        files_list = format_files_list(files)
 
-    await message.answer(summary)
+        summary = (
+            "📦 Проект создан\n\n"
+            f"Название: {data['project_name']}\n"
+            f"Тип: {data['project_type']}\n"
+            f"Идея: {custom_idea}\n"
+            f"Задача: {data['goal']}\n"
+            f"Уровень: {data['experience']}\n"
+            f"Модель: {data['model']}\n"
+            f"Язык: {data['language']}\n"
+            f"Хостинг: {data['hosting']}\n"
+            f"Режим: {generation_mode}\n\n"
+            "Что внутри:\n"
+            f"{files_list}\n\n"
+            "Если режим template — значит AI-ключ не настроен или генерация упала, "
+            "и бот использовал безопасный шаблон.\n\n"
+            "Напишите /start, чтобы собрать ещё один проект."
+        )
 
-    shutil.rmtree(project_dir, ignore_errors=True)
-    await state.clear()
+        await message.answer(summary)
+        await state.clear()
+    except Exception:
+        logger.exception("Project generation failed")
+        await message.answer(
+            "Не удалось собрать проект. Попробуйте ещё раз через /start. "
+            "Если ошибка повторится, проверьте настройки токенов и AI-провайдера."
+        )
+    finally:
+        shutil.rmtree(project_dir, ignore_errors=True)
 
 
 @dp.message()
@@ -371,7 +404,7 @@ async def fallback(message: types.Message, state: FSMContext):
 
 
 async def main():
-    print("Бот запущен. Остановить — Ctrl+C")
+    logger.info("Bot started. Press Ctrl+C to stop.")
     await dp.start_polling(bot)
 
 
