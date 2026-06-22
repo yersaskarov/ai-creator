@@ -1,5 +1,7 @@
 # AI Creator
 
+[![Tests](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml/badge.svg)](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml)
+
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
@@ -141,6 +143,26 @@ Then open the bot in Telegram and send:
 /start
 ```
 
+## Docker
+
+Build the image:
+
+```bash
+docker build -t ai-creator .
+```
+
+Run the bot with environment variables from `.env`:
+
+```bash
+docker run --env-file .env ai-creator
+```
+
+The container starts the Telegram bot with:
+
+```bash
+python bot.py
+```
+
 ## Testing
 
 Run syntax checks:
@@ -166,6 +188,18 @@ Current tests cover:
 
 The tests do not call Claude/OpenAI and do not require real API keys.
 
+## Deployment
+
+For a simple VPS deployment:
+
+1. Clone the repository.
+2. Create a `.env` file from `.env.example`.
+3. Install dependencies with `pip install -r requirements.txt`.
+4. Run the bot with `python bot.py`.
+5. Use a process manager such as `systemd`, `supervisor`, or Docker restart policies for long-running usage.
+
+Production deployment still needs persistent FSM storage, structured logs, monitoring, and rate limits.
+
 ## Security
 
 Never commit `.env`. It may contain real Telegram, OpenAI, or Anthropic tokens. This repository includes `.env.example` only as a safe template with empty secret values.
@@ -190,6 +224,15 @@ Important limitation: generated code should still be reviewed before running. AI
 - Add screenshots and demo GIFs.
 - Add generated-project preview before ZIP delivery.
 - Add more templates and provider-specific generation strategies.
+
+## Roadmap v0.3
+
+- Add CI with GitHub Actions.
+- Add Docker support.
+- Improve GitHub showcase documentation.
+- Keep the current Claude/OpenAI generation flow stable.
+- Preserve template fallback as the safe default.
+- Prepare the codebase for future extraction of project-building services.
 
 ## Project Status
 
