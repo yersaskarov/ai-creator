@@ -37,6 +37,7 @@ dp = Dispatcher(storage=MemoryStorage())
 
 BASE_DIR = Path(__file__).parent
 GENERATED_DIR = BASE_DIR / "generated_projects"
+AI_GENERATION_TIMEOUT_SECONDS = 45
 
 
 def keyboard(buttons: list[str]) -> ReplyKeyboardMarkup:
@@ -283,7 +284,7 @@ def build_static_files(data: dict) -> dict[str, str]:
     else:
         files["requirements.txt"] = templates.build_requirements(data)
 
-    if "TODO: replace this stub" not in main_content:
+    if templates.should_include_prompts(data):
         for filename, content in templates.PROMPTS.items():
             files[f"prompts/{filename}"] = content
 
@@ -332,7 +333,16 @@ async def finish_survey(message: types.Message, state: FSMContext):
 
     try:
         try:
-            ai_files = await ai_generator.generate_project_files(data)
+            ai_files = await asyncio.wait_for(
+                ai_generator.generate_project_files(data),
+                timeout=AI_GENERATION_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                "AI generation timed out after %s seconds; using template fallback",
+                AI_GENERATION_TIMEOUT_SECONDS,
+            )
+            ai_files = None
         except Exception:
             logger.exception("AI generation failed")
             ai_files = None

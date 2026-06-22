@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import logging
 import re
 from pathlib import PurePosixPath
 from typing import Any
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
+DEFAULT_ANTHROPIC_MAX_TOKENS = 8000
 DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
+MAX_AI_FILES = 12
+MAX_AI_FILE_CHARS = 50_000
+
+logger = logging.getLogger(__name__)
 
 
 def _sanitize_text_field(value: Any, max_length: int = 1000) -> str:
@@ -99,22 +105,55 @@ def _parse_files_from_json(text: str) -> dict[str, str] | None:
         if text.startswith("json"):
             text = text[4:].strip()
 
-    data = json.loads(text)
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as error:
+        logger.warning(
+            "AI response is not valid JSON: %s at position %s; response length=%s",
+            error.msg,
+            error.pos,
+            len(text),
+        )
+        return None
+
     files = data.get("files")
 
     if not isinstance(files, dict):
+        return None
+
+    if len(files) > MAX_AI_FILES:
+        logger.warning("AI returned too many files: %s > %s", len(files), MAX_AI_FILES)
         return None
 
     clean_files = {}
     for path, content in files.items():
         if not isinstance(path, str) or not isinstance(content, str):
             continue
+        if len(content) > MAX_AI_FILE_CHARS:
+            logger.warning(
+                "AI returned an oversized file: %s has %s chars > %s",
+                path,
+                len(content),
+                MAX_AI_FILE_CHARS,
+            )
+            return None
         clean_path = _clean_relative_path(path)
         if clean_path is None:
             continue
         clean_files[clean_path] = content
 
     return clean_files or None
+
+
+def _get_int_env(name: str, default: int) -> int:
+    value = os.getenv(name)
+    if not value:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning("Invalid integer value for %s; using default %s", name, default)
+        return default
 
 
 async def generate_project_files(data: dict[str, Any]) -> dict[str, str] | None:
@@ -161,7 +200,7 @@ async def _generate_with_anthropic(prompt: str) -> dict[str, str] | None:
     client = AsyncAnthropic(api_key=api_key)
     response = await client.messages.create(
         model=os.getenv("ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL),
-        max_tokens=5000,
+        max_tokens=_get_int_env("ANTHROPIC_MAX_TOKENS", DEFAULT_ANTHROPIC_MAX_TOKENS),
         temperature=0.2,
         messages=[
             {"role": "user", "content": prompt}

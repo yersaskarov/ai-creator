@@ -270,6 +270,12 @@ _MAIN_BY_COMBO = {
     ("Свободная идея", "Не уверен"): _PY_TELEGRAM_BOT,
 }
 
+_PROMPT_ENABLED_COMBOS = {
+    combo
+    for combo, content in _MAIN_BY_COMBO.items()
+    if content is not _JS_TODO_STUB
+}
+
 
 def build_main_file(data: dict) -> tuple[str, str]:
     project_type = data.get("project_type", "Telegram-бот")
@@ -278,6 +284,12 @@ def build_main_file(data: dict) -> tuple[str, str]:
     content = _MAIN_BY_COMBO.get((project_type, language), _PY_TELEGRAM_BOT)
     filename = "main.js" if language == "JavaScript / TypeScript" else "main.py"
     return filename, content
+
+
+def should_include_prompts(data: dict) -> bool:
+    project_type = data.get("project_type", "Telegram-бот")
+    language = data.get("language", "Python")
+    return (project_type, language) in _PROMPT_ENABLED_COMBOS
 
 
 def build_readme(data: dict, main_filename: str) -> str:
