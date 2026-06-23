@@ -15,6 +15,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 
 import ai_generator
 from idea_analyzer import analyze_project_idea
+from interview_builder import build_interview_questions
 from project_builder import (
     build_static_files,
     make_safe_filename,
@@ -305,7 +306,9 @@ async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str,
     try:
         custom_idea = data.get("custom_idea") or ""
         if custom_idea:
-            data["idea_analysis"] = analyze_project_idea(custom_idea)
+            idea_analysis = analyze_project_idea(custom_idea)
+            data["idea_analysis"] = idea_analysis
+            data["interview_questions"] = build_interview_questions(idea_analysis)
 
         ai_files = await asyncio.wait_for(
             ai_generator.generate_project_files(data),

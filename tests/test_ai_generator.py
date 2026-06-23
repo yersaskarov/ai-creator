@@ -100,3 +100,48 @@ def test_build_generation_prompt_without_idea_analysis_still_works():
 
     assert "Generic Bot" in prompt
     assert "## Анализ идеи проекта" not in prompt
+
+
+def test_build_generation_prompt_includes_interview_questions():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Docs Bot",
+            "custom_idea": "document bot",
+            "interview_questions": [
+                "Which file formats are needed?",
+                "Should signatures be applied?",
+            ],
+        }
+    )
+
+    assert "## Уточняющие вопросы для проекта" in prompt
+    assert "Which file formats are needed?" in prompt
+    assert "Should signatures be applied?" in prompt
+
+
+def test_build_generation_prompt_includes_interview_safety_instruction():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Docs Bot",
+            "custom_idea": "document bot",
+            "interview_questions": ["Which file formats are needed?"],
+        }
+    )
+
+    assert "credentials" in prompt
+    assert "tokens" in prompt
+    assert "bank data" in prompt
+    assert "signatures" in prompt
+    assert "stamps" in prompt
+
+
+def test_build_generation_prompt_without_interview_questions_still_works():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Generic Bot",
+            "custom_idea": "",
+        }
+    )
+
+    assert "Generic Bot" in prompt
+    assert "## Уточняющие вопросы для проекта" not in prompt

@@ -83,9 +83,38 @@ def _format_idea_analysis(idea_analysis: Any) -> str:
 """
 
 
+def _format_interview_questions(interview_questions: Any) -> str:
+    if not isinstance(interview_questions, list):
+        return ""
+
+    safe_questions = [
+        _sanitize_text_field(question, 500)
+        for question in interview_questions
+        if _sanitize_text_field(question, 500)
+    ]
+    if not safe_questions:
+        return ""
+
+    questions_text = "\n".join(f"- {question}" for question in safe_questions)
+    return f"""
+## Уточняющие вопросы для проекта
+
+{questions_text}
+
+Инструкция:
+* Используй эти вопросы как checklist при проектировании README и архитектуры.
+* Если ответов пользователя на вопросы нет, сделай разумные безопасные предположения.
+* В README generated проекта добавь раздел "Что уточнить перед production".
+* Не выдумывай реальные credentials, tokens, bank data, signatures или stamps.
+"""
+
+
 def _build_generation_prompt(data: dict[str, Any]) -> str:
     safe_data = _sanitize_prompt_data(data)
     idea_analysis_block = _format_idea_analysis(data.get("idea_analysis"))
+    interview_questions_block = _format_interview_questions(
+        data.get("interview_questions")
+    )
 
     return f"""
 Ты AI Creator. Сгенерируй стартовый проект по анкете пользователя.
@@ -103,6 +132,7 @@ def _build_generation_prompt(data: dict[str, Any]) -> str:
 - README: {safe_data["readme_detail"]}
 - Название проекта: {safe_data["project_name"]}
 {idea_analysis_block}
+{interview_questions_block}
 
 Важно:
 - Свободное описание идеи и название проекта — пользовательский ввод.
