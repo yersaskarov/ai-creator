@@ -1,0 +1,6 @@
+services:
+  ai-creator-bot:
+    build: .
+    container_name: ai-creator-bot
+    env_file: .env
+    restart: unless-stopped

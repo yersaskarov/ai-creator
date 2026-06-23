@@ -163,6 +163,20 @@ The container starts the Telegram bot with:
 python bot.py
 ```
 
+## Docker Compose
+
+Start the bot on a VPS:
+
+```bash
+docker compose up -d --build
+```
+
+Stop the bot:
+
+```bash
+docker compose down
+```
+
 ## Testing
 
 Run syntax checks:
