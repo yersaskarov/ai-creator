@@ -3,7 +3,6 @@ import os
 import asyncio
 import logging
 import shutil
-import zipfile
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,6 +20,7 @@ from project_builder import (
     make_safe_filename,
     write_files,
 )
+from zip_utils import create_project_zip
 
 load_dotenv()
 
@@ -341,10 +341,7 @@ async def finish_survey(message: types.Message, state: FSMContext):
         if zip_path.exists():
             zip_path.unlink()
 
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for file in project_dir.rglob("*"):
-                if file.is_file():
-                    zipf.write(file, arcname=file.relative_to(project_dir.parent))
+        create_project_zip(project_dir, zip_path, project_dir.parent)
 
         await message.answer_document(
             FSInputFile(zip_path),
