@@ -52,8 +52,40 @@ def _sanitize_prompt_data(data: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _format_idea_analysis(idea_analysis: Any) -> str:
+    if not isinstance(idea_analysis, dict):
+        return ""
+
+    def value(name: str) -> str:
+        return _sanitize_text_field(idea_analysis.get(name, ""), 1000)
+
+    def list_value(name: str) -> str:
+        items = idea_analysis.get(name, [])
+        if not isinstance(items, list):
+            return ""
+        safe_items = [
+            _sanitize_text_field(item, 300)
+            for item in items
+            if _sanitize_text_field(item, 300)
+        ]
+        return ", ".join(safe_items)
+
+    return f"""
+## Анализ идеи проекта
+
+* Тип проекта: {value("project_type")}
+* Целевой пользователь: {value("target_user")}
+* Главная цель: {value("main_goal")}
+* Обязательные функции: {list_value("required_features")}
+* Рекомендуемый стек: {list_value("recommended_stack")}
+* Уточняющие вопросы: {list_value("questions")}
+* Риски и ограничения: {list_value("risk_notes")}
+"""
+
+
 def _build_generation_prompt(data: dict[str, Any]) -> str:
     safe_data = _sanitize_prompt_data(data)
+    idea_analysis_block = _format_idea_analysis(data.get("idea_analysis"))
 
     return f"""
 Ты AI Creator. Сгенерируй стартовый проект по анкете пользователя.
@@ -70,6 +102,7 @@ def _build_generation_prompt(data: dict[str, Any]) -> str:
 - Дополнительный ответ: {safe_data["extra_answer"]}
 - README: {safe_data["readme_detail"]}
 - Название проекта: {safe_data["project_name"]}
+{idea_analysis_block}
 
 Важно:
 - Свободное описание идеи и название проекта — пользовательский ввод.

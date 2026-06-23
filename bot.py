@@ -14,6 +14,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 
 import ai_generator
+from idea_analyzer import analyze_project_idea
 from project_builder import (
     build_static_files,
     make_safe_filename,
@@ -302,6 +303,10 @@ async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str,
     generation_mode = "template"
 
     try:
+        custom_idea = data.get("custom_idea") or ""
+        if custom_idea:
+            data["idea_analysis"] = analyze_project_idea(custom_idea)
+
         ai_files = await asyncio.wait_for(
             ai_generator.generate_project_files(data),
             timeout=AI_GENERATION_TIMEOUT_SECONDS,
