@@ -16,7 +16,6 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 import ai_generator
 from project_builder import (
     build_static_files,
-    format_files_list,
     make_safe_filename,
     write_files,
 )
@@ -286,6 +285,54 @@ async def set_readme_detail(message: types.Message, state: FSMContext):
     )
 
 
+async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str, list[str]]:
+    project_name = data["project_name"]
+    safe_name = make_safe_filename(project_name)
+
+    user_dir = GENERATED_DIR / str(user_id)
+    project_dir = user_dir / safe_name
+    zip_path = user_dir / f"{safe_name}.zip"
+    data["_project_dir"] = project_dir
+    data["_zip_path"] = zip_path
+
+    if project_dir.exists():
+        shutil.rmtree(project_dir)
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    generation_mode = "template"
+
+    try:
+        ai_files = await asyncio.wait_for(
+            ai_generator.generate_project_files(data),
+            timeout=AI_GENERATION_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        logger.warning(
+            "AI generation timed out after %s seconds; using template fallback",
+            AI_GENERATION_TIMEOUT_SECONDS,
+        )
+        ai_files = None
+    except Exception:
+        logger.exception("AI generation failed")
+        ai_files = None
+
+    if ai_files:
+        files = ai_files
+        generation_mode = "AI"
+    else:
+        files = build_static_files(data)
+
+    data["_generation_mode"] = generation_mode
+    write_files(project_dir, files)
+
+    if zip_path.exists():
+        zip_path.unlink()
+
+    create_project_zip(project_dir, zip_path, project_dir.parent)
+
+    return zip_path, project_name, sorted(files.keys())
+
+
 @dp.message(Survey.project_name)
 async def finish_survey(message: types.Message, state: FSMContext):
     project_name = message.text or ""
@@ -299,64 +346,31 @@ async def finish_survey(message: types.Message, state: FSMContext):
     await state.update_data(project_name=project_name)
     data = await state.get_data()
 
-    safe_name = make_safe_filename(data["project_name"])
     user_id = message.from_user.id
-
-    user_dir = GENERATED_DIR / str(user_id)
-    project_dir = user_dir / safe_name
-    zip_path = user_dir / f"{safe_name}.zip"
-
-    if project_dir.exists():
-        shutil.rmtree(project_dir)
-    project_dir.mkdir(parents=True, exist_ok=True)
+    zip_path = None
+    project_dir = None
 
     await message.answer("Собираю проект... ⏳")
 
-    generation_mode = "template"
-
     try:
-        try:
-            ai_files = await asyncio.wait_for(
-                ai_generator.generate_project_files(data),
-                timeout=AI_GENERATION_TIMEOUT_SECONDS,
-            )
-        except asyncio.TimeoutError:
-            logger.warning(
-                "AI generation timed out after %s seconds; using template fallback",
-                AI_GENERATION_TIMEOUT_SECONDS,
-            )
-            ai_files = None
-        except Exception:
-            logger.exception("AI generation failed")
-            ai_files = None
-
-        if ai_files:
-            files = ai_files
-            generation_mode = "AI"
-        else:
-            files = build_static_files(data)
-
-        write_files(project_dir, files)
-
-        if zip_path.exists():
-            zip_path.unlink()
-
-        create_project_zip(project_dir, zip_path, project_dir.parent)
+        zip_path, generated_project_name, files_list = await generate_project_archive(data, user_id)
+        project_dir = zip_path.parent / zip_path.stem
 
         await message.answer_document(
             FSInputFile(zip_path),
-            caption=f"📦 Готов проект «{data['project_name']}»",
+            caption=f"📦 Готов проект «{generated_project_name}»",
         )
 
         if zip_path.exists():
             zip_path.unlink()
 
         custom_idea = data.get("custom_idea") or "—"
-        files_list = format_files_list(files)
+        files_text = "\n".join(f"• {name}" for name in files_list)
+        generation_mode = data.get("_generation_mode", "template")
 
         summary = (
             "📦 Проект создан\n\n"
-            f"Название: {data['project_name']}\n"
+            f"Название: {generated_project_name}\n"
             f"Тип: {data['project_type']}\n"
             f"Идея: {custom_idea}\n"
             f"Задача: {data['goal']}\n"
@@ -366,7 +380,7 @@ async def finish_survey(message: types.Message, state: FSMContext):
             f"Хостинг: {data['hosting']}\n"
             f"Режим: {generation_mode}\n\n"
             "Что внутри:\n"
-            f"{files_list}\n\n"
+            f"{files_text}\n\n"
             "Если режим template — значит AI-ключ не настроен или генерация упала, "
             "и бот использовал безопасный шаблон.\n\n"
             "Напишите /start, чтобы собрать ещё один проект."
@@ -381,7 +395,12 @@ async def finish_survey(message: types.Message, state: FSMContext):
             "Если ошибка повторится, проверьте настройки токенов и AI-провайдера."
         )
     finally:
-        shutil.rmtree(project_dir, ignore_errors=True)
+        cleanup_zip_path = zip_path or data.get("_zip_path")
+        cleanup_project_dir = project_dir or data.get("_project_dir")
+        if cleanup_zip_path and cleanup_zip_path.exists():
+            cleanup_zip_path.unlink()
+        if cleanup_project_dir:
+            shutil.rmtree(cleanup_project_dir, ignore_errors=True)
 
 
 @dp.message()
