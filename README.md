@@ -134,6 +134,7 @@ Copy `.env.example` to `.env` and fill in the values you need:
 
 ```bash
 TELEGRAM_BOT_TOKEN=
+ALLOWED_TELEGRAM_IDS=
 AI_CREATOR_PROVIDER=
 AI_GENERATION_TIMEOUT_SECONDS=120
 AI_PROVIDER_TIMEOUT_SECONDS=90
@@ -147,6 +148,7 @@ ANTHROPIC_MAX_TOKENS=8000
 Environment variables:
 
 - `TELEGRAM_BOT_TOKEN`: required Telegram bot token from BotFather.
+- `ALLOWED_TELEGRAM_IDS`: optional comma-separated Telegram user IDs. Empty value allows everyone.
 - `AI_CREATOR_PROVIDER`: optional AI provider. Supported values are `openai` and `anthropic`.
 - `AI_GENERATION_TIMEOUT_SECONDS`: optional timeout before falling back to templates.
 - `AI_PROVIDER_TIMEOUT_SECONDS`: optional HTTP timeout for OpenAI/Anthropic SDK calls.

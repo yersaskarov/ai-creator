@@ -10,6 +10,7 @@ DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 8000
 DEFAULT_AI_PROVIDER_TIMEOUT_SECONDS = 90
 DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
+DEFAULT_OPENAI_MAX_TOKENS = 4000
 MAX_AI_FILES = 12
 MAX_AI_FILE_CHARS = 50_000
 
@@ -291,6 +292,7 @@ async def _generate_with_openai(prompt: str) -> dict[str, str] | None:
             {"role": "user", "content": prompt},
         ],
         temperature=0.2,
+        max_tokens=DEFAULT_OPENAI_MAX_TOKENS,
     )
 
     text = response.choices[0].message.content

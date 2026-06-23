@@ -4,9 +4,10 @@ import asyncio
 import logging
 import shutil
 from pathlib import Path
+from typing import Any, Awaitable, Callable
 
 from dotenv import load_dotenv
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import BaseMiddleware, Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -21,6 +22,7 @@ from project_builder import (
     make_safe_filename,
     write_files,
 )
+from runtime_guards import GenerationLock, is_user_allowed, parse_allowed_ids
 from zip_utils import create_project_zip
 
 load_dotenv()
@@ -41,9 +43,31 @@ if not TOKEN:
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+ALLOWED_TELEGRAM_IDS = parse_allowed_ids(os.getenv("ALLOWED_TELEGRAM_IDS"))
+generation_lock = GenerationLock()
 
 BASE_DIR = Path(__file__).parent
 GENERATED_DIR = BASE_DIR / "generated_projects"
+
+
+class AccessControlMiddleware(BaseMiddleware):
+    def __init__(self, allowed_ids: set[int]) -> None:
+        self.allowed_ids = allowed_ids
+
+    async def __call__(
+        self,
+        handler: Callable[[types.Message, dict[str, Any]], Awaitable[Any]],
+        event: types.Message,
+        data: dict[str, Any],
+    ) -> Any:
+        user = data.get("event_from_user") or event.from_user
+        if user and not is_user_allowed(user.id, self.allowed_ids):
+            await event.answer("⛔ Доступ к этому боту ограничен.")
+            return None
+        return await handler(event, data)
+
+
+dp.message.middleware(AccessControlMiddleware(ALLOWED_TELEGRAM_IDS))
 
 
 def get_int_env(name: str, default: int) -> int:
@@ -358,16 +382,21 @@ async def finish_survey(message: types.Message, state: FSMContext):
         )
         return
 
-    await state.update_data(project_name=project_name)
-    data = await state.get_data()
-
     user_id = message.from_user.id
+    if not generation_lock.acquire(user_id):
+        await message.answer("⏳ Ваш проект уже генерируется. Дождитесь завершения.")
+        return
+
+    data = {}
     zip_path = None
     project_dir = None
 
-    await message.answer("Собираю проект... ⏳")
-
     try:
+        await state.update_data(project_name=project_name)
+        data = await state.get_data()
+
+        await message.answer("Собираю проект... ⏳")
+
         zip_path, generated_project_name, files_list = await generate_project_archive(data, user_id)
         project_dir = zip_path.parent / zip_path.stem
 
@@ -413,6 +442,7 @@ async def finish_survey(message: types.Message, state: FSMContext):
         cleanup_zip_path = zip_path or data.get("_zip_path")
         cleanup_project_dir = project_dir or data.get("_project_dir")
         cleanup_project_paths(cleanup_zip_path, cleanup_project_dir)
+        generation_lock.release(user_id)
 
 
 @dp.message()

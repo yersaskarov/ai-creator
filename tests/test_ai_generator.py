@@ -1,4 +1,6 @@
 import json
+import sys
+from types import SimpleNamespace
 
 import ai_generator
 
@@ -145,3 +147,31 @@ def test_build_generation_prompt_without_interview_questions_still_works():
 
     assert "Generic Bot" in prompt
     assert "## Уточняющие вопросы для проекта" not in prompt
+
+
+def test_generate_with_openai_uses_max_tokens(monkeypatch):
+    captured_kwargs = {}
+
+    class FakeCompletions:
+        async def create(self, **kwargs):
+            captured_kwargs.update(kwargs)
+            message = SimpleNamespace(
+                content=json.dumps({"files": {"README.md": "hello"}})
+            )
+            choice = SimpleNamespace(message=message)
+            return SimpleNamespace(choices=[choice])
+
+    class FakeAsyncOpenAI:
+        def __init__(self, **kwargs):
+            self.chat = SimpleNamespace(
+                completions=FakeCompletions()
+            )
+
+    fake_openai = SimpleNamespace(AsyncOpenAI=FakeAsyncOpenAI)
+    monkeypatch.setitem(sys.modules, "openai", fake_openai)
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    result = __import__("asyncio").run(ai_generator._generate_with_openai("prompt"))
+
+    assert result == {"README.md": "hello"}
+    assert captured_kwargs["max_tokens"] == ai_generator.DEFAULT_OPENAI_MAX_TOKENS
