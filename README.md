@@ -35,7 +35,7 @@ The project currently works as an MVP:
   - Maximum file count.
   - Maximum file size.
 - Configurable AI timeout.
-- 29 tests passing for parser safety, project building, ZIP creation, and templates.
+- 40 tests passing for parser safety, project building, ZIP creation, fallback, and hardening edge cases.
 
 ## v0.4 Highlights
 
@@ -127,6 +127,7 @@ Copy `.env.example` to `.env` and fill in the values you need:
 TELEGRAM_BOT_TOKEN=
 AI_CREATOR_PROVIDER=
 AI_GENERATION_TIMEOUT_SECONDS=120
+AI_PROVIDER_TIMEOUT_SECONDS=90
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ANTHROPIC_API_KEY=
@@ -139,6 +140,7 @@ Environment variables:
 - `TELEGRAM_BOT_TOKEN`: required Telegram bot token from BotFather.
 - `AI_CREATOR_PROVIDER`: optional AI provider. Supported values are `openai` and `anthropic`.
 - `AI_GENERATION_TIMEOUT_SECONDS`: optional timeout before falling back to templates.
+- `AI_PROVIDER_TIMEOUT_SECONDS`: optional HTTP timeout for OpenAI/Anthropic SDK calls.
 - `OPENAI_API_KEY`: required only when `AI_CREATOR_PROVIDER=openai`.
 - `OPENAI_MODEL`: optional OpenAI model override.
 - `ANTHROPIC_API_KEY`: required only when `AI_CREATOR_PROVIDER=anthropic`.

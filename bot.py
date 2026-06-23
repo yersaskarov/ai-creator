@@ -333,6 +333,13 @@ async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str,
     return zip_path, project_name, sorted(files.keys())
 
 
+def cleanup_project_paths(zip_path: Path | None, project_dir: Path | None) -> None:
+    if zip_path and zip_path.exists():
+        zip_path.unlink()
+    if project_dir:
+        shutil.rmtree(project_dir, ignore_errors=True)
+
+
 @dp.message(Survey.project_name)
 async def finish_survey(message: types.Message, state: FSMContext):
     project_name = message.text or ""
@@ -397,10 +404,7 @@ async def finish_survey(message: types.Message, state: FSMContext):
     finally:
         cleanup_zip_path = zip_path or data.get("_zip_path")
         cleanup_project_dir = project_dir or data.get("_project_dir")
-        if cleanup_zip_path and cleanup_zip_path.exists():
-            cleanup_zip_path.unlink()
-        if cleanup_project_dir:
-            shutil.rmtree(cleanup_project_dir, ignore_errors=True)
+        cleanup_project_paths(cleanup_zip_path, cleanup_project_dir)
 
 
 @dp.message()

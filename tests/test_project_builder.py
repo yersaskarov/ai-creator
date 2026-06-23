@@ -1,4 +1,5 @@
 import project_builder
+import pytest
 
 
 def base_project_data(**overrides):
@@ -33,6 +34,11 @@ def test_make_safe_filename_removes_special_characters():
 def test_make_safe_filename_falls_back_for_empty_or_forbidden_only_name():
     assert project_builder.make_safe_filename("") == "my_project"
     assert project_builder.make_safe_filename("!!!") == "my_project"
+
+
+def test_make_safe_filename_avoids_reserved_windows_device_names():
+    assert project_builder.make_safe_filename("CON") == "CON_project"
+    assert project_builder.make_safe_filename("LPT1") == "LPT1_project"
 
 
 def test_build_static_files_adds_python_requirements_and_env_example():
@@ -97,6 +103,21 @@ def test_write_files_preserves_file_contents(tmp_path):
     project_builder.write_files(tmp_path, {"nested/file.txt": content})
 
     assert (tmp_path / "nested" / "file.txt").read_text(encoding="utf-8") == content
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    [
+        "../.env",
+        "safe/../../.env",
+        "/etc/passwd",
+        "C:/Users/token.txt",
+        "nested\\..\\.env",
+    ],
+)
+def test_write_files_rejects_unsafe_paths(tmp_path, unsafe_path):
+    with pytest.raises(ValueError):
+        project_builder.write_files(tmp_path, {unsafe_path: "secret"})
 
 
 def test_format_files_list_returns_readable_text():

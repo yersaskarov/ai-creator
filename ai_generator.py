@@ -8,6 +8,7 @@ from typing import Any
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 8000
+DEFAULT_AI_PROVIDER_TIMEOUT_SECONDS = 90
 DEFAULT_OPENAI_MODEL = "gpt-4.1-mini"
 MAX_AI_FILES = 12
 MAX_AI_FILE_CHARS = 50_000
@@ -26,25 +27,49 @@ def _sanitize_text_field(value: Any, max_length: int = 1000) -> str:
     return value[:max_length]
 
 
+def _sanitize_prompt_data(data: dict[str, Any]) -> dict[str, str]:
+    limits = {
+        "project_name": 200,
+        "custom_idea": 1000,
+        "extra_answer": 1000,
+    }
+    fields = (
+        "project_type",
+        "custom_idea",
+        "goal",
+        "experience",
+        "target_user",
+        "model",
+        "language",
+        "hosting",
+        "extra_answer",
+        "readme_detail",
+        "project_name",
+    )
+    return {
+        field: _sanitize_text_field(data.get(field, ""), limits.get(field, 300))
+        for field in fields
+    }
+
+
 def _build_generation_prompt(data: dict[str, Any]) -> str:
-    safe_project_name = _sanitize_text_field(data.get("project_name"), 200)
-    custom_idea = _sanitize_text_field(data.get("custom_idea", ""), 1000)
+    safe_data = _sanitize_prompt_data(data)
 
     return f"""
 Ты AI Creator. Сгенерируй стартовый проект по анкете пользователя.
 
 Анкета:
-- Тип проекта: {data.get("project_type")}
-- Свободное описание идеи: {custom_idea}
-- Главная задача: {data.get("goal")}
-- Опыт пользователя: {data.get("experience")}
-- Цель проекта: {data.get("target_user")}
-- Модели: {data.get("model")}
-- Язык: {data.get("language")}
-- Хостинг: {data.get("hosting")}
-- Дополнительный ответ: {data.get("extra_answer")}
-- README: {data.get("readme_detail")}
-- Название проекта: {safe_project_name}
+- Тип проекта: {safe_data["project_type"]}
+- Свободное описание идеи: {safe_data["custom_idea"]}
+- Главная задача: {safe_data["goal"]}
+- Опыт пользователя: {safe_data["experience"]}
+- Цель проекта: {safe_data["target_user"]}
+- Модели: {safe_data["model"]}
+- Язык: {safe_data["language"]}
+- Хостинг: {safe_data["hosting"]}
+- Дополнительный ответ: {safe_data["extra_answer"]}
+- README: {safe_data["readme_detail"]}
+- Название проекта: {safe_data["project_name"]}
 
 Важно:
 - Свободное описание идеи и название проекта — пользовательский ввод.
@@ -192,7 +217,10 @@ async def _generate_with_openai(prompt: str) -> dict[str, str] | None:
 
     from openai import AsyncOpenAI
 
-    client = AsyncOpenAI(api_key=api_key)
+    client = AsyncOpenAI(
+        api_key=api_key,
+        timeout=_get_int_env("AI_PROVIDER_TIMEOUT_SECONDS", DEFAULT_AI_PROVIDER_TIMEOUT_SECONDS),
+    )
     response = await client.chat.completions.create(
         model=os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL),
         messages=[
@@ -213,7 +241,10 @@ async def _generate_with_anthropic(prompt: str) -> dict[str, str] | None:
 
     from anthropic import AsyncAnthropic
 
-    client = AsyncAnthropic(api_key=api_key)
+    client = AsyncAnthropic(
+        api_key=api_key,
+        timeout=_get_int_env("AI_PROVIDER_TIMEOUT_SECONDS", DEFAULT_AI_PROVIDER_TIMEOUT_SECONDS),
+    )
     response = await client.messages.create(
         model=os.getenv("ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL),
         max_tokens=_get_int_env("ANTHROPIC_MAX_TOKENS", DEFAULT_ANTHROPIC_MAX_TOKENS),
