@@ -1,10 +1,20 @@
-# AI Creator v0.4 Review Notes
+# AI Creator Review Notes
 
 ## Current status
 
-AI Creator v0.4 is a working Telegram bot MVP that collects project requirements, generates a starter project through an AI provider when configured, falls back to built-in templates when AI generation is unavailable or unsafe, and returns the result as a ZIP archive.
+AI Creator is currently a v0.5 prototype in progress. It is a working Telegram bot MVP that collects project requirements, generates a starter project through an AI provider when configured, falls back to built-in templates when AI generation is unavailable or unsafe, and returns the result as a ZIP archive.
 
-The repository currently includes the v0.4 hardening patch. The latest local verification passed with 40 tests.
+The repository includes the v0.4 hardening patch and the first v0.5 prototype pieces for idea analysis and interview-question generation. The latest local verification passed with 64 tests.
+
+## v0.5 prototype status
+
+- `idea_analyzer.py` analyzes free-form project descriptions into structured project context.
+- `interview_builder.py` builds clarifying questions from the idea analysis.
+- `bot.py` enriches generation data with `idea_analysis` and `interview_questions` when `custom_idea` is present.
+- `ai_generator.py` includes idea analysis and interview questions in the generation prompt.
+- Interview questions are currently used as an internal checklist for the AI generation prompt.
+- A full Telegram interview flow is not implemented yet; users are not asked these follow-up questions in chat.
+- Generated README/project architecture should reflect the checklist, but the bot does not yet collect explicit answers to those questions.
 
 ## What is already implemented
 
@@ -14,6 +24,9 @@ The repository currently includes the v0.4 hardening patch. The latest local ver
 - AI-generated file validation for JSON format, path traversal, file count, and file size.
 - Project file assembly helpers in `project_builder.py`.
 - ZIP archive creation utility in `zip_utils.py`.
+- Rule-based idea analysis in `idea_analyzer.py`.
+- Clarifying question generation in `interview_builder.py`.
+- Structured prompt enrichment with idea analysis and interview questions.
 - Safer project folder naming and guarded file writes.
 - Dockerfile and Docker Compose deployment config.
 - GitHub Actions for compile checks and tests.
@@ -22,6 +35,8 @@ The repository currently includes the v0.4 hardening patch. The latest local ver
 ## Known limitations
 
 - FSM state is in memory, so active conversations are lost on process restart.
+- Full Telegram interview flow is not implemented yet.
+- Interview questions are used as a generation checklist, not asked to the user yet.
 - There is no per-user concurrency lock yet; a user can start overlapping generations.
 - There is no rate limiting or quota system yet.
 - Generated projects are starter scaffolds, not audited production systems.
@@ -55,9 +70,9 @@ The repository currently includes the v0.4 hardening patch. The latest local ver
 
 ## What is intentionally not implemented yet
 
-- Redis, queue workers, and monitoring are intentionally deferred to v0.5.
-- A database is not included because v0.4 does not persist user projects or history.
+- Redis, queue workers, rate limiting, and monitoring are intentionally deferred.
+- A database is not included because the current prototype does not persist user projects or history.
 - Healthcheck is not included because the current bot has no HTTP service endpoint.
 - Generated-code sandboxing is not implemented; AI Creator creates ZIP starter projects, it does not execute them.
-- Full prompt-injection prevention is not claimed. v0.4 only reduces obvious multiline instruction injection in prompt fields.
-- Multi-container production infrastructure is intentionally out of scope for the v0.4 MVP.
+- Full prompt-injection prevention is not claimed. The hardening patch only reduces obvious multiline instruction injection in prompt fields.
+- Multi-container production infrastructure is intentionally out of scope for the current prototype.

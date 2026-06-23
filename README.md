@@ -4,7 +4,7 @@
 
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
-Current version: v0.4.
+Current status: v0.5 prototype in progress.
 
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
 
@@ -35,10 +35,15 @@ The project currently works as an MVP:
   - Maximum file count.
   - Maximum file size.
 - Configurable AI timeout.
-- 40 tests passing for parser safety, project building, ZIP creation, fallback, and hardening edge cases.
+- 64 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview questions, and hardening edge cases.
 
-## v0.4 Highlights
+## v0.5 Prototype Highlights
 
+- Idea Analyzer for free-form project descriptions.
+- Interview Question Builder for project clarification.
+- Structured prompt enrichment with idea analysis and interview checklist questions.
+- Work-bot oriented generation for practical internal tools.
+- Support for document automation, monitoring alerts, ticket notifications, and internal assistants.
 - `project_builder.py` for project file assembly helpers.
 - `zip_utils.py` for ZIP archive creation.
 - Cleaner bot orchestration in `bot.py`.
@@ -73,6 +78,8 @@ flowchart TD
 .
 |-- ai_generator.py       # AI provider integration and generated-file validation
 |-- bot.py                # Telegram bot, FSM flow, and generation orchestration
+|-- idea_analyzer.py      # Rule-based idea analysis for free-form project descriptions
+|-- interview_builder.py  # Clarifying question builder for analyzed ideas
 |-- project_builder.py    # Project file assembly helpers
 |-- templates.py          # Built-in fallback project templates
 |-- zip_utils.py          # ZIP archive creation utility
@@ -80,6 +87,8 @@ flowchart TD
 |-- requirements.txt      # Runtime dependencies
 |-- requirements-dev.txt  # Development/test dependencies
 |-- tests/                # Unit tests
+|   |-- test_idea_analyzer.py
+|   |-- test_interview_builder.py
 |   |-- test_project_builder.py
 |   `-- test_zip_utils.py
 |-- .env.example          # Safe environment variable template
@@ -200,7 +209,7 @@ docker compose down
 Run syntax checks:
 
 ```bash
-python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py
+python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py
 ```
 
 Run the unit test suite:
@@ -216,6 +225,8 @@ Current tests cover:
 - Maximum AI file count.
 - Maximum AI file size.
 - Project folder name sanitization.
+- Idea analysis for free-form project descriptions.
+- Interview question building from idea analysis.
 - Project builder file assembly and file writing.
 - ZIP archive creation and nested directory preservation.
 - Prompt-file inclusion rules for template projects.
