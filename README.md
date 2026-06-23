@@ -4,6 +4,8 @@
 
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
+Current version: v0.4.
+
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
 
 ## Project Overview
@@ -26,13 +28,22 @@ The project currently works as an MVP:
 - Template fallback mode for safe project generation.
 - Python and JavaScript/TypeScript starter projects.
 - ZIP export delivered directly in Telegram.
+- Docker Compose deployment support.
 - Basic validation for AI-generated output:
   - JSON parsing guard.
   - Path traversal protection.
   - Maximum file count.
   - Maximum file size.
 - Configurable AI timeout.
-- Unit tests for parser, path safety, limits, filename sanitization, and template prompt selection.
+- 29 tests passing for parser safety, project building, ZIP creation, and templates.
+
+## v0.4 Highlights
+
+- `project_builder.py` for project file assembly helpers.
+- `zip_utils.py` for ZIP archive creation.
+- Cleaner bot orchestration in `bot.py`.
+- Docker Compose support for VPS deployment.
+- Expanded test coverage.
 
 ## Architecture Diagram
 
@@ -61,11 +72,16 @@ flowchart TD
 ```text
 .
 |-- ai_generator.py       # AI provider integration and generated-file validation
-|-- bot.py                # Telegram bot, FSM flow, ZIP creation, fallback handling
+|-- bot.py                # Telegram bot, FSM flow, and generation orchestration
+|-- project_builder.py    # Project file assembly helpers
 |-- templates.py          # Built-in fallback project templates
+|-- zip_utils.py          # ZIP archive creation utility
+|-- docker-compose.yml    # Docker Compose deployment config
 |-- requirements.txt      # Runtime dependencies
 |-- requirements-dev.txt  # Development/test dependencies
 |-- tests/                # Unit tests
+|   |-- test_project_builder.py
+|   `-- test_zip_utils.py
 |-- .env.example          # Safe environment variable template
 `-- README.md
 ```
@@ -182,7 +198,7 @@ docker compose down
 Run syntax checks:
 
 ```bash
-python -m py_compile bot.py ai_generator.py templates.py
+python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py
 ```
 
 Run the unit test suite:
@@ -198,6 +214,8 @@ Current tests cover:
 - Maximum AI file count.
 - Maximum AI file size.
 - Project folder name sanitization.
+- Project builder file assembly and file writing.
+- ZIP archive creation and nested directory preservation.
 - Prompt-file inclusion rules for template projects.
 
 The tests do not call Claude/OpenAI and do not require real API keys.
