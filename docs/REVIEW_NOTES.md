@@ -1,8 +1,28 @@
 # AI Creator Review Notes
 
-## Current status
+## v0.6 status (current)
 
-AI Creator is currently a v0.5 release candidate. It is a working Telegram bot MVP that collects project requirements, generates a starter project through an AI provider when configured, falls back to built-in templates when AI generation is unavailable or unsafe, and returns the result as a ZIP archive.
+AI Creator v0.6 is a released prototype with 151 passing tests, security hardening, and a Trading Assistant domain pack.
+
+Changes since v0.5:
+
+- Interactive interview flow implemented (users are asked clarifying questions in chat).
+- Domain Pack system introduced (`domain_packs.py`): 7 packs covering Zabbix, Jira, Logistics, Document Automation, Knowledge Assistant, Trading, and Generic.
+- Assistant Architect layer added (`assistant_architect.py`).
+- Agent Blueprint layer added (`agent_blueprint.py`): generates a full product specification from domain context, idea analysis, and interview answers.
+- Trading Assistant domain pack added with 9 interview questions, TradingView webhook support, prop firm risk tracking, and trading-specific security notes.
+- `path_safety.py` introduced as the single source of path traversal protection; duplicate implementations removed from `ai_generator.py` and `project_builder.py`.
+- `GenerationCooldown` added to `runtime_guards.py`: per-user cooldown between generation requests (env: `GENERATION_COOLDOWN_SECONDS`, default 60 s).
+- Full pipeline timeout added in `bot.py` via `asyncio.wait_for` (env: `GENERATION_PIPELINE_TIMEOUT_SECONDS`, default 180 s).
+- Gitleaks GitHub Actions workflow added for secret scanning on every push and pull request.
+- `CLAUDE.md` added with security rules, architecture map, and safe commit workflow.
+- Russian documentation added in `docs/README_RU.md`.
+- `README.md` is the main English GitHub entry point; `docs/README_RU.md` is the Russian version.
+- Test count: 151 passing (was 87 in v0.5 notes, 129 in v0.6 RC).
+
+## v0.5 status (archived)
+
+AI Creator was a v0.5 release candidate (now superseded by v0.6). It is a working Telegram bot MVP that collects project requirements, generates a starter project through an AI provider when configured, falls back to built-in templates when AI generation is unavailable or unsafe, and returns the result as a ZIP archive.
 
 The repository includes the v0.4 hardening patch, v0.5 idea analysis and interview-question generation, access control, a per-user generation lock, and stricter user-flow guards. The latest local verification passed with 87 tests.
 

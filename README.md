@@ -1,13 +1,16 @@
 # AI Creator
 
 [![Tests](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml/badge.svg)](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml)
+[![Secret Scanning](https://github.com/yersaskarov/ai-creator/actions/workflows/secret_scanning.yml/badge.svg)](https://github.com/yersaskarov/ai-creator/actions/workflows/secret_scanning.yml)
 
-AI assistant builder that turns work problems into generated Telegram bots and AI-agent starter projects.
+> 🇷🇺 Russian version: [docs/README_RU.md](docs/README_RU.md)
 
-Status: v0.6 prototype  
-Tests: 129 passing  
+**AI Creator** is an assistant builder platform prototype that turns a plain-language work problem into a generated Telegram bot or AI-agent starter project — packaged as a ZIP archive delivered through Telegram.
+
+Status: v0.6  
+Tests: 151 passing  
 Docker: supported  
-CI: GitHub Actions  
+CI: GitHub Actions + Gitleaks secret scanning  
 Stage: controlled pilot / portfolio project
 
 ## What It Is
@@ -112,12 +115,14 @@ If Claude/OpenAI is not configured, times out, returns invalid JSON, or fails va
 - Claude and OpenAI provider support.
 - Template fallback mode.
 - Python and JavaScript/TypeScript starter projects.
-- Safe file writing and ZIP packaging.
+- Safe file writing and ZIP packaging with path traversal protection (`path_safety.py`).
 - Access control through `ALLOWED_TELEGRAM_IDS`.
-- Per-user generation lock.
+- Per-user generation lock and cooldown.
+- Full pipeline timeout guard.
+- Gitleaks secret scanning on every push.
 - Docker and Docker Compose support.
-- GitHub Actions checks.
-- 129 passing tests.
+- GitHub Actions CI.
+- 151 passing tests.
 
 ## Domain Packs
 
@@ -152,7 +157,7 @@ The generated project prompt instructs the model to follow the blueprint and inc
 
 ## Core Modules
 
-- `bot.py`: Telegram FSM, user flow, access guard, and generation lock.
+- `bot.py`: Telegram FSM, user flow, access guard, generation lock, cooldown, and pipeline timeout.
 - `idea_analyzer.py`: free-form idea analysis and project type detection.
 - `interview_builder.py`: clarifying interview questions from Domain Packs.
 - `domain_packs.py`: single source of domain knowledge.
@@ -160,8 +165,9 @@ The generated project prompt instructs the model to follow the blueprint and inc
 - `agent_blueprint.py`: problem-to-agent blueprint builder.
 - `ai_generator.py`: Claude/OpenAI generation, prompt enrichment, parser safety, and fallback trigger.
 - `project_builder.py`: generated project file assembly and guarded file writes.
+- `path_safety.py`: shared path sanitisation — single source of path traversal protection.
 - `zip_utils.py`: safe ZIP archive creation.
-- `runtime_guards.py`: access control helpers and per-user generation lock.
+- `runtime_guards.py`: access control helpers, per-user generation lock, and cooldown.
 - `templates.py`: built-in fallback projects.
 
 ## Architecture
@@ -221,9 +227,10 @@ AI Creator includes several guardrails:
 - provider timeout settings;
 - invalid AI JSON fallback;
 - access control via `ALLOWED_TELEGRAM_IDS`;
-- per-user generation lock;
-- `.env` based secrets;
-- no secrets committed to the repository;
+- per-user generation lock and 60-second cooldown;
+- full pipeline timeout (180 s) preventing indefinite hangs;
+- Gitleaks secret scanning on every push and pull request;
+- `.env` based secrets — never committed to the repository;
 - template fallback when AI generation is unavailable or unsafe.
 
 Generated projects are starter scaffolds and should be reviewed before running.
@@ -289,6 +296,8 @@ Environment variables:
 - `ANTHROPIC_API_KEY`: required when `AI_CREATOR_PROVIDER=anthropic`.
 - `ANTHROPIC_MODEL`: optional Anthropic model override.
 - `ANTHROPIC_MAX_TOKENS`: optional Anthropic output token limit.
+- `GENERATION_COOLDOWN_SECONDS`: per-user cooldown between generations, default 60 s. Set to 0 to disable.
+- `GENERATION_PIPELINE_TIMEOUT_SECONDS`: hard timeout for the full pipeline, default 180 s.
 
 If no provider is configured, AI Creator uses built-in templates.
 
@@ -335,7 +344,7 @@ docker compose down
 Syntax checks:
 
 ```bash
-python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py runtime_guards.py domain_packs.py assistant_architect.py agent_blueprint.py
+python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py runtime_guards.py domain_packs.py assistant_architect.py agent_blueprint.py path_safety.py
 ```
 
 Unit tests:
@@ -350,7 +359,7 @@ On the project venv in Windows:
 .\venv\Scripts\python.exe -m pytest
 ```
 
-Current test status: 129 passing.
+Current test status: 151 passing.
 
 The tests cover parser safety, path validation, project building, ZIP creation, fallback behavior, idea analysis, interview flow, domain packs, assistant architecture, agent blueprints, access control, generation locks, and prompt enrichment. They do not call real OpenAI or Anthropic APIs.
 
