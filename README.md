@@ -4,7 +4,7 @@
 
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
-Current status: v0.5 prototype in progress.
+Current status: v0.5 release candidate.
 
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
 
@@ -35,20 +35,20 @@ The project currently works as an MVP:
   - Maximum file count.
   - Maximum file size.
 - Configurable AI timeout.
-- 64 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview questions, and hardening edge cases.
+- Access control through `ALLOWED_TELEGRAM_IDS`.
+- Per-user generation lock.
+- Stricter user-flow guards.
+- 87 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview questions, access control, user-flow guards, and hardening edge cases.
 
-## v0.5 Prototype Highlights
+## v0.5 RC Highlights
 
-- Idea Analyzer for free-form project descriptions.
-- Interview Question Builder for project clarification.
-- Structured prompt enrichment with idea analysis and interview checklist questions.
-- Work-bot oriented generation for practical internal tools.
-- Support for document automation, monitoring alerts, ticket notifications, and internal assistants.
-- `project_builder.py` for project file assembly helpers.
-- `zip_utils.py` for ZIP archive creation.
-- Cleaner bot orchestration in `bot.py`.
-- Docker Compose support for VPS deployment.
-- Expanded test coverage.
+- Idea analyzer.
+- Interview question builder.
+- Structured prompt enrichment.
+- Access control with `ALLOWED_TELEGRAM_IDS`.
+- Per-user generation lock.
+- Stricter user-flow guards.
+- 87 tests passing.
 
 ## Architecture Diagram
 
@@ -81,6 +81,7 @@ flowchart TD
 |-- idea_analyzer.py      # Rule-based idea analysis for free-form project descriptions
 |-- interview_builder.py  # Clarifying question builder for analyzed ideas
 |-- project_builder.py    # Project file assembly helpers
+|-- runtime_guards.py     # Runtime state and user-flow guard helpers
 |-- templates.py          # Built-in fallback project templates
 |-- zip_utils.py          # ZIP archive creation utility
 |-- docker-compose.yml    # Docker Compose deployment config
@@ -211,13 +212,13 @@ docker compose down
 Run syntax checks:
 
 ```bash
-python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py
+python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py runtime_guards.py
 ```
 
 Run the unit test suite:
 
 ```bash
-pytest
+venv\Scripts\python.exe -m pytest
 ```
 
 Current tests cover:
@@ -283,4 +284,4 @@ Important limitation: generated code should still be reviewed before running. AI
 
 ## Project Status
 
-AI Creator is an early MVP and portfolio project. It is functional enough to generate real starter projects through Claude, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
+AI Creator is a v0.5 release candidate and portfolio project. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
