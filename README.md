@@ -4,7 +4,7 @@
 
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
-Current status: v0.5 release candidate.
+Current status: v0.6 Sprint 1 in development.
 
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
 
@@ -16,6 +16,7 @@ The project currently works as an MVP:
 
 - If Claude/OpenAI is configured, AI Creator asks the model to generate a compact starter project.
 - If AI generation fails, times out, returns invalid JSON, or is not configured, the bot falls back to safe built-in templates.
+- For custom ideas, the bot analyzes the idea, asks clarifying interview questions one by one, and passes the answers into generation.
 - Generated files are validated before being written to disk.
 - The final project is sent to the user as a Telegram document.
 
@@ -38,17 +39,18 @@ The project currently works as an MVP:
 - Access control through `ALLOWED_TELEGRAM_IDS`.
 - Per-user generation lock.
 - Stricter user-flow guards.
-- 87 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview questions, access control, user-flow guards, and hardening edge cases.
+- 93 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview flow, access control, user-flow guards, and hardening edge cases.
 
-## v0.5 RC Highlights
+## v0.6 Sprint 1 Highlights
 
 - Idea analyzer.
-- Interview question builder.
+- Interview question builder with an interactive Telegram interview flow.
 - Structured prompt enrichment.
+- Interview answers included in AI generation prompts.
 - Access control with `ALLOWED_TELEGRAM_IDS`.
 - Per-user generation lock.
 - Stricter user-flow guards.
-- 87 tests passing.
+- 93 tests passing.
 
 ## Architecture Diagram
 
@@ -284,4 +286,4 @@ Important limitation: generated code should still be reviewed before running. AI
 
 ## Project Status
 
-AI Creator is a v0.5 release candidate and portfolio project. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
+AI Creator is in v0.6 Sprint 1 development after the v0.5 release candidate. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.

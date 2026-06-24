@@ -83,6 +83,103 @@ def test_is_valid_project_name_input(monkeypatch):
     assert bot.is_valid_project_name_input("My Project") is True
 
 
+def test_prepare_interview_data_builds_questions(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+
+    data = bot.prepare_interview_data(
+        "Р‘РѕС‚ РґРµР»Р°РµС‚ PDF РґРѕРєСѓРјРµРЅС‚ Рё СЃС‚Р°РІРёС‚ РїРµС‡Р°С‚СЊ."
+    )
+
+    assert data["idea_analysis"]["project_type"] == "document_automation_bot"
+    assert data["interview_questions"]
+    assert data["interview_answers"] == []
+    assert data["interview_question_index"] == 0
+
+
+def test_custom_idea_starts_interview_flow(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+
+    monkeypatch.setattr(
+        bot,
+        "prepare_interview_data",
+        lambda custom_idea: {
+            "idea_analysis": {"project_type": "custom"},
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [],
+            "interview_question_index": 0,
+        },
+    )
+
+    message = FakeMessage("My custom idea", user_id=123)
+    state = FakeState()
+
+    asyncio.run(bot.set_custom_idea(message, state))
+
+    assert state.data["custom_idea"] == "My custom idea"
+    assert state.data["idea_analysis"] == {"project_type": "custom"}
+    assert state.data["interview_questions"] == ["Question one?", "Question two?"]
+    assert state.data["interview_answers"] == []
+    assert state.state == bot.Survey.interview_question
+    assert "Question one?" in message.answers[-1]
+
+
+def test_interview_answer_collects_answers_and_asks_next(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    message = FakeMessage("First answer", user_id=123)
+    state = FakeState(
+        {
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [],
+            "interview_question_index": 0,
+        }
+    )
+
+    asyncio.run(bot.set_interview_answer(message, state))
+
+    assert state.data["interview_answers"] == [
+        {"question": "Question one?", "answer": "First answer"}
+    ]
+    assert state.data["interview_question_index"] == 1
+    assert state.state is None
+    assert "Question two?" in message.answers[-1]
+
+
+def test_interview_answer_finishes_flow_after_last_question(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    message = FakeMessage("Second answer", user_id=123)
+    state = FakeState(
+        {
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [
+                {"question": "Question one?", "answer": "First answer"}
+            ],
+            "interview_question_index": 1,
+        }
+    )
+
+    asyncio.run(bot.set_interview_answer(message, state))
+
+    assert state.data["interview_answers"] == [
+        {"question": "Question one?", "answer": "First answer"},
+        {"question": "Question two?", "answer": "Second answer"},
+    ]
+    assert state.data["interview_question_index"] == 2
+    assert state.state == bot.Survey.goal
+    assert message.answers
+
+
 def test_start_during_active_generation_does_not_clear_state(monkeypatch):
     monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
@@ -200,6 +297,12 @@ def test_generate_project_archive_uses_template_fallback_on_ai_timeout(monkeypat
         "hosting": "Local",
         "extra_answer": "",
         "readme_detail": "",
+        "interview_answers": [
+            {
+                "question": "РљР°РєРёРµ С„РѕСЂРјР°С‚С‹?",
+                "answer": "PDF",
+            }
+        ],
     }
 
     monkeypatch.setattr(bot, "GENERATED_DIR", tmp_path)
@@ -253,6 +356,12 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
         "hosting": "Local",
         "extra_answer": "",
         "readme_detail": "",
+        "interview_answers": [
+            {
+                "question": "РљР°РєРёРµ С„РѕСЂРјР°С‚С‹?",
+                "answer": "PDF",
+            }
+        ],
     }
 
     monkeypatch.setattr(bot, "GENERATED_DIR", tmp_path)
@@ -263,6 +372,7 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
     try:
         assert data["idea_analysis"]["project_type"] == "document_automation_bot"
         assert data["interview_questions"]
+        assert data["interview_answers"][0]["answer"] == "PDF"
         assert any("DOCX" in question for question in data["interview_questions"])
         assert "README.md" in files_list
     finally:

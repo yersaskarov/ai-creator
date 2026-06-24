@@ -110,9 +110,52 @@ def is_valid_project_name_input(text: str | None) -> bool:
     return bool(text and text.strip())
 
 
+def prepare_interview_data(custom_idea: str) -> dict[str, Any]:
+    idea_analysis = analyze_project_idea(custom_idea)
+    interview_questions = build_interview_questions(idea_analysis)
+    return {
+        "idea_analysis": idea_analysis,
+        "interview_questions": interview_questions,
+        "interview_answers": [],
+        "interview_question_index": 0,
+    }
+
+
+def build_interview_answer(
+    question: str,
+    answer: str | None,
+) -> dict[str, str]:
+    return {
+        "question": str(question).strip(),
+        "answer": (answer or "").strip(),
+    }
+
+
+def get_interview_question(data: dict[str, Any]) -> str | None:
+    questions = data.get("interview_questions")
+    index = data.get("interview_question_index", 0)
+    if not isinstance(questions, list) or not isinstance(index, int):
+        return None
+    if index < 0 or index >= len(questions):
+        return None
+    question = questions[index]
+    if not isinstance(question, str) or not question.strip():
+        return None
+    return question.strip()
+
+
+def format_interview_question_prompt(index: int, total: int, question: str) -> str:
+    return (
+        f"Уточняющий вопрос {index + 1} из {total}:\n\n"
+        f"{question}\n\n"
+        "Ответьте одним сообщением."
+    )
+
+
 class Survey(StatesGroup):
     project_type = State()
     custom_idea = State()
+    interview_question = State()
     goal = State()
     experience = State()
     target_user = State()
@@ -202,10 +245,80 @@ async def set_custom_idea(message: types.Message, state: FSMContext):
         )
         return
 
+    interview_data = prepare_interview_data(custom_idea)
+    await state.update_data(custom_idea=custom_idea, **interview_data)
+
+    first_question = get_interview_question(interview_data)
+    if first_question:
+        await state.set_state(Survey.interview_question)
+        await message.answer(
+            format_interview_question_prompt(
+                interview_data["interview_question_index"],
+                len(interview_data["interview_questions"]),
+                first_question,
+            ),
+            reply_markup=types.ReplyKeyboardRemove(),
+        )
+        return
+
     await state.update_data(custom_idea=custom_idea)
     await state.set_state(Survey.goal)
     await message.answer(
         "Какую главную задачу решает эта идея?",
+        reply_markup=keyboard(GOALS),
+    )
+
+
+@dp.message(Survey.interview_question)
+async def set_interview_answer(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    question = get_interview_question(data)
+    questions = data.get("interview_questions", [])
+    answers = data.get("interview_answers", [])
+    index = data.get("interview_question_index", 0)
+
+    if not question or not isinstance(questions, list) or not isinstance(index, int):
+        await state.set_state(Survey.goal)
+        await message.answer(
+            "РљР°РєСѓСЋ РіР»Р°РІРЅСѓСЋ Р·Р°РґР°С‡Сѓ СЂРµС€Р°РµС‚ СЌС‚Р° РёРґРµСЏ?",
+            reply_markup=keyboard(GOALS),
+        )
+        return
+
+    if not isinstance(answers, list):
+        answers = []
+
+    answers = [item for item in answers if isinstance(item, dict)]
+    answers.append(build_interview_answer(question, message.text))
+    next_index = index + 1
+
+    await state.update_data(
+        interview_answers=answers,
+        interview_question_index=next_index,
+    )
+
+    if next_index < len(questions):
+        next_question = get_interview_question(
+            {
+                "interview_questions": questions,
+                "interview_question_index": next_index,
+            }
+        )
+        if next_question:
+            await message.answer(
+                format_interview_question_prompt(
+                    next_index,
+                    len(questions),
+                    next_question,
+                ),
+                reply_markup=types.ReplyKeyboardRemove(),
+            )
+            return
+
+    await state.set_state(Survey.goal)
+    await message.answer(
+        "РЎРїР°СЃРёР±Рѕ, СѓС‚РѕС‡РЅРµРЅРёСЏ СЃРѕС…СЂР°РЅРёР».\n\n"
+        "РљР°РєСѓСЋ РіР»Р°РІРЅСѓСЋ Р·Р°РґР°С‡Сѓ СЂРµС€Р°РµС‚ СЌС‚Р° РёРґРµСЏ?",
         reply_markup=keyboard(GOALS),
     )
 
@@ -351,9 +464,14 @@ async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str,
     try:
         custom_idea = data.get("custom_idea") or ""
         if custom_idea:
-            idea_analysis = analyze_project_idea(custom_idea)
-            data["idea_analysis"] = idea_analysis
-            data["interview_questions"] = build_interview_questions(idea_analysis)
+            if "idea_analysis" not in data:
+                data["idea_analysis"] = analyze_project_idea(custom_idea)
+            if "interview_questions" not in data:
+                data["interview_questions"] = build_interview_questions(
+                    data["idea_analysis"]
+                )
+            if "interview_answers" not in data:
+                data["interview_answers"] = []
 
         ai_files = await asyncio.wait_for(
             ai_generator.generate_project_files(data),

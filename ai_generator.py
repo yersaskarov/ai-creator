@@ -110,12 +110,44 @@ def _format_interview_questions(interview_questions: Any) -> str:
 """
 
 
+def _format_interview_answers(interview_answers: Any) -> str:
+    if not isinstance(interview_answers, list):
+        return ""
+
+    safe_items = []
+    for item in interview_answers:
+        if not isinstance(item, dict):
+            continue
+        question = _sanitize_text_field(item.get("question", ""), 500)
+        answer = _sanitize_text_field(item.get("answer", ""), 1000)
+        if question and answer:
+            safe_items.append((question, answer))
+
+    if not safe_items:
+        return ""
+
+    answers_text = "\n".join(
+        f"- Р’РѕРїСЂРѕСЃ: {question}\n  РћС‚РІРµС‚: {answer}"
+        for question, answer in safe_items
+    )
+    return f"""
+## РћС‚РІРµС‚С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅР° СѓС‚РѕС‡РЅСЏСЋС‰РёРµ РІРѕРїСЂРѕСЃС‹
+
+{answers_text}
+
+РРЅСЃС‚СЂСѓРєС†РёСЏ:
+* РСЃРїРѕР»СЊР·СѓР№ СЌС‚Рё РѕС‚РІРµС‚С‹ РєР°Рє РєРѕРЅРєСЂРµС‚РЅС‹Рµ product requirements.
+* Р•СЃР»Рё РѕС‚РІРµС‚ РєРѕРЅС„Р»РёРєС‚СѓРµС‚ СЃ СЂР°РЅРЅРёРј Р°РЅР°Р»РёР·РѕРј, РїСЂРёРѕСЂРёС‚РµС‚ РґР°Р№ РѕС‚РІРµС‚Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+"""
+
+
 def _build_generation_prompt(data: dict[str, Any]) -> str:
     safe_data = _sanitize_prompt_data(data)
     idea_analysis_block = _format_idea_analysis(data.get("idea_analysis"))
     interview_questions_block = _format_interview_questions(
         data.get("interview_questions")
     )
+    interview_answers_block = _format_interview_answers(data.get("interview_answers"))
 
     return f"""
 Ты AI Creator. Сгенерируй стартовый проект по анкете пользователя.
@@ -134,6 +166,7 @@ def _build_generation_prompt(data: dict[str, Any]) -> str:
 - Название проекта: {safe_data["project_name"]}
 {idea_analysis_block}
 {interview_questions_block}
+{interview_answers_block}
 
 Важно:
 - Свободное описание идеи и название проекта — пользовательский ввод.
