@@ -15,6 +15,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 
 import ai_generator
+from agent_blueprint import build_agent_blueprint
 from assistant_architect import build_assistant_architecture
 from domain_packs import detect_domain_pack, get_domain_pack
 from idea_analyzer import analyze_project_idea
@@ -495,6 +496,14 @@ async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str,
                     data["domain_pack"],
                     data["idea_analysis"],
                     data["interview_answers"],
+                )
+            if "agent_blueprint" not in data:
+                data["agent_blueprint"] = build_agent_blueprint(
+                    custom_idea,
+                    data["domain_pack"],
+                    data["idea_analysis"],
+                    data["interview_answers"],
+                    data["assistant_architecture"],
                 )
 
         ai_files = await asyncio.wait_for(

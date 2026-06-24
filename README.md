@@ -4,7 +4,7 @@
 
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
-Current status: v0.6 Sprint 3 in development.
+Current status: v0.6 Sprint 4 in development.
 
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
 
@@ -18,6 +18,7 @@ The project currently works as an MVP:
 - If AI generation fails, times out, returns invalid JSON, or is not configured, the bot falls back to safe built-in templates.
 - For custom ideas, the bot analyzes the idea, asks clarifying interview questions one by one, and passes the answers into generation.
 - AI Creator now includes Domain Packs, Assistant Architect, and domain-aware project generation for work assistants.
+- Agent Blueprint Layer turns the problem, domain context, interview answers, and architecture into a structured product blueprint.
 - Generated files are validated before being written to disk.
 - The final project is sent to the user as a Telegram document.
 
@@ -42,9 +43,9 @@ The project currently works as an MVP:
 - Stricter user-flow guards.
 - Domain Packs for logistics, document automation, Jira, Zabbix, and internal knowledge assistants.
 - Assistant Architect for domain-aware stack, integration, architecture, and production guidance.
-- 114 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview flow, domain packs, assistant architecture, access control, user-flow guards, and hardening edge cases.
+- 124 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview flow, domain packs, assistant architecture, agent blueprints, access control, user-flow guards, and hardening edge cases.
 
-## v0.6 Sprint 3 Highlights
+## v0.6 Sprint 4 Highlights
 
 - Idea analyzer.
 - Interview question builder with an interactive Telegram interview flow.
@@ -54,10 +55,17 @@ The project currently works as an MVP:
 - Assistant Architect.
 - Domain-aware project generation.
 - Single Source of Domain Knowledge in `domain_packs.py`.
+- Agent Blueprint Layer.
+- Problem -> Blueprint -> Project generation.
+- Domain-aware acceptance criteria.
 - Access control with `ALLOWED_TELEGRAM_IDS`.
 - Per-user generation lock.
 - Stricter user-flow guards.
-- 114 tests passing.
+- 124 tests passing.
+
+## Agent Blueprint Layer
+
+AI Creator now builds an Agent Blueprint before generation. The blueprint captures the problem statement, target users, inputs, outputs, agent actions, integrations, data storage, security notes, deployment notes, and acceptance criteria. The generation prompt treats this blueprint as the main product specification, so generated projects are guided by domain-aware acceptance criteria instead of only a loose idea description.
 
 ## Single Source of Domain Knowledge
 
@@ -90,6 +98,7 @@ flowchart TD
 ```text
 .
 |-- ai_generator.py       # AI provider integration and generated-file validation
+|-- agent_blueprint.py    # Rule-based product blueprint builder for generated assistants
 |-- assistant_architect.py # Domain-aware assistant architecture builder
 |-- bot.py                # Telegram bot, FSM flow, and generation orchestration
 |-- domain_packs.py       # Domain knowledge packs and domain detection
@@ -227,7 +236,7 @@ docker compose down
 Run syntax checks:
 
 ```bash
-python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py runtime_guards.py domain_packs.py assistant_architect.py
+python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py runtime_guards.py domain_packs.py assistant_architect.py agent_blueprint.py
 ```
 
 Run the unit test suite:
@@ -247,6 +256,7 @@ Current tests cover:
 - Interview question building from idea analysis.
 - Domain pack detection.
 - Assistant architecture generation.
+- Agent blueprint generation.
 - Domain-aware prompt enrichment.
 - Project builder file assembly and file writing.
 - ZIP archive creation and nested directory preservation.
@@ -302,4 +312,4 @@ Important limitation: generated code should still be reviewed before running. AI
 
 ## Project Status
 
-AI Creator is in v0.6 Sprint 3 development after the v0.5 release candidate. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
+AI Creator is in v0.6 Sprint 4 development after the v0.5 release candidate. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.

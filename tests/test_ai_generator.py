@@ -254,6 +254,63 @@ def test_build_generation_prompt_includes_production_considerations():
     assert "Do not hardcode signatures." in prompt
 
 
+def test_build_generation_prompt_includes_agent_blueprint_block():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Monitoring Bot",
+            "custom_idea": "zabbix alerts",
+            "agent_blueprint": {
+                "problem_statement": "Track unavailable cameras.",
+                "target_users": ["operators"],
+                "inputs": ["Zabbix API"],
+                "outputs": ["Telegram alerts"],
+                "agent_actions": ["track first_seen_down"],
+                "integrations": ["Zabbix API"],
+                "data_storage": ["first_seen_down timestamps"],
+                "security_notes": ["do not store credentials in code"],
+                "deployment_notes": ["run scheduled checks"],
+                "acceptance_criteria": [
+                    "unavailable cameras must stay visible even after 5 days"
+                ],
+            },
+        }
+    )
+
+    assert "## Agent Blueprint" in prompt
+    assert "Track unavailable cameras." in prompt
+    assert "Use Agent Blueprint as the main product specification." in prompt
+
+
+def test_build_generation_prompt_includes_blueprint_acceptance_criteria():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Docs Bot",
+            "custom_idea": "document automation",
+            "agent_blueprint": {
+                "problem_statement": "Generate supplier documents.",
+                "acceptance_criteria": [
+                    "generated PDF contains correct supplier/date/bank fields"
+                ],
+            },
+        }
+    )
+
+    assert "Acceptance Criteria" in prompt
+    assert "generated PDF contains correct supplier/date/bank fields" in prompt
+
+
+def test_build_generation_prompt_without_agent_blueprint_still_works():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Generic Bot",
+            "custom_idea": "",
+        }
+    )
+
+    assert "Generic Bot" in prompt
+    assert "## Agent Blueprint" not in prompt
+
+
 def test_generate_with_openai_uses_max_tokens(monkeypatch):
     captured_kwargs = {}
 

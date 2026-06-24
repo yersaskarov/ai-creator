@@ -466,6 +466,7 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
                     *data["interview_questions"],
                     data["domain_pack"]["name"],
                     data["assistant_architecture"]["assistant_type"],
+                    data["agent_blueprint"]["problem_statement"],
                 ]
             ),
             "main.py": "print('ok')",
@@ -502,6 +503,8 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
         assert data["interview_answers"][0]["answer"] == "PDF"
         assert data["domain_pack"]["name"] == "document_automation"
         assert data["assistant_architecture"]["assistant_type"] == "document_automation_assistant"
+        assert data["agent_blueprint"]["problem_statement"]
+        assert "generated PDF" in data["agent_blueprint"]["outputs"]
         assert any("DOCX" in question for question in data["interview_questions"])
         assert "README.md" in files_list
     finally:
