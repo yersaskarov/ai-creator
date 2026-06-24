@@ -41,9 +41,17 @@ if not TOKEN:
         "файлом и добавьте строку TELEGRAM_BOT_TOKEN=ваш_токен"
     )
 
+def load_allowed_telegram_ids() -> set[int]:
+    try:
+        return parse_allowed_ids(os.getenv("ALLOWED_TELEGRAM_IDS"))
+    except ValueError as error:
+        logger.error("Invalid ALLOWED_TELEGRAM_IDS configuration; bot startup aborted.")
+        raise RuntimeError("Invalid ALLOWED_TELEGRAM_IDS configuration") from error
+
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
-ALLOWED_TELEGRAM_IDS = parse_allowed_ids(os.getenv("ALLOWED_TELEGRAM_IDS"))
+ALLOWED_TELEGRAM_IDS = load_allowed_telegram_ids()
 generation_lock = GenerationLock()
 
 BASE_DIR = Path(__file__).parent
@@ -94,6 +102,14 @@ def keyboard(buttons: list[str]) -> ReplyKeyboardMarkup:
     )
 
 
+def should_block_start_for_generation(user_id: int, lock: GenerationLock) -> bool:
+    return lock.is_active(user_id)
+
+
+def is_valid_project_name_input(text: str | None) -> bool:
+    return bool(text and text.strip())
+
+
 class Survey(StatesGroup):
     project_type = State()
     custom_idea = State()
@@ -138,6 +154,11 @@ README_DETAIL = ["Да, максимально подробно", "Нет, я р
 
 @dp.message(CommandStart())
 async def start(message: types.Message, state: FSMContext):
+    user = message.from_user
+    if user and should_block_start_for_generation(user.id, generation_lock):
+        await message.answer("⏳ Ваш проект уже генерируется. Дождитесь завершения.")
+        return
+
     await state.clear()
     await state.set_state(Survey.project_type)
     await message.answer(
@@ -374,7 +395,11 @@ def cleanup_project_paths(zip_path: Path | None, project_dir: Path | None) -> No
 
 @dp.message(Survey.project_name)
 async def finish_survey(message: types.Message, state: FSMContext):
-    project_name = message.text or ""
+    if not is_valid_project_name_input(message.text):
+        await message.answer("Введите название проекта текстом.")
+        return
+
+    project_name = message.text.strip()
     if len(project_name) > MAX_PROJECT_NAME_LENGTH:
         await message.answer(
             f"Название проекта слишком длинное. Максимум {MAX_PROJECT_NAME_LENGTH} символов. "

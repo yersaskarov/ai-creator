@@ -9,11 +9,15 @@ def parse_allowed_ids(value: str | None) -> set[int]:
     for item in value.split(","):
         item = item.strip()
         if not item:
-            continue
-        try:
-            allowed_ids.add(int(item))
-        except ValueError:
-            continue
+            raise ValueError("ALLOWED_TELEGRAM_IDS contains an empty item")
+        if not item.isdecimal():
+            raise ValueError("ALLOWED_TELEGRAM_IDS contains an invalid Telegram ID")
+
+        user_id = int(item)
+        if user_id <= 0:
+            raise ValueError("ALLOWED_TELEGRAM_IDS must contain positive Telegram IDs")
+
+        allowed_ids.add(user_id)
     return allowed_ids
 
 

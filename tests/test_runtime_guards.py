@@ -1,4 +1,10 @@
+import pytest
+
 from runtime_guards import GenerationLock, is_user_allowed, parse_allowed_ids
+
+
+def test_parse_allowed_ids_none_returns_empty_set():
+    assert parse_allowed_ids(None) == set()
 
 
 def test_parse_allowed_ids_empty_string_returns_empty_set():
@@ -13,8 +19,14 @@ def test_parse_allowed_ids_ignores_spaces():
     assert parse_allowed_ids(" 123456 , 987654 ") == {123456, 987654}
 
 
-def test_parse_allowed_ids_ignores_invalid_values():
-    assert parse_allowed_ids("123,not-a-number,456") == {123, 456}
+def test_parse_allowed_ids_with_comma_and_spaces_returns_int_set():
+    assert parse_allowed_ids("123, 456") == {123, 456}
+
+
+@pytest.mark.parametrize("value", ["abc", "123;456", "12.5", "-1", "123,,456"])
+def test_parse_allowed_ids_rejects_invalid_values(value):
+    with pytest.raises(ValueError):
+        parse_allowed_ids(value)
 
 
 def test_is_user_allowed_when_allowed_list_is_empty():
