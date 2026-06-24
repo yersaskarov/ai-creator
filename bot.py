@@ -31,6 +31,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MAX_CUSTOM_IDEA_LENGTH = 1500
+MAX_INTERVIEW_ANSWER_LENGTH = 1500
 MAX_PROJECT_NAME_LENGTH = 80
 DEFAULT_AI_GENERATION_TIMEOUT_SECONDS = 120
 
@@ -123,11 +124,11 @@ def prepare_interview_data(custom_idea: str) -> dict[str, Any]:
 
 def build_interview_answer(
     question: str,
-    answer: str | None,
+    answer: str,
 ) -> dict[str, str]:
     return {
         "question": str(question).strip(),
-        "answer": (answer or "").strip(),
+        "answer": answer,
     }
 
 
@@ -285,11 +286,23 @@ async def set_interview_answer(message: types.Message, state: FSMContext):
         )
         return
 
+    answer_text = (message.text or "").strip()
+    if not answer_text:
+        await message.answer(
+            "Ответьте текстом, чтобы я мог учесть это при генерации проекта."
+        )
+        return
+    if len(answer_text) > MAX_INTERVIEW_ANSWER_LENGTH:
+        await message.answer(
+            f"Ответ слишком длинный. Сократите его до {MAX_INTERVIEW_ANSWER_LENGTH} символов."
+        )
+        return
+
     if not isinstance(answers, list):
         answers = []
 
     answers = [item for item in answers if isinstance(item, dict)]
-    answers.append(build_interview_answer(question, message.text))
+    answers.append(build_interview_answer(question, answer_text))
     next_index = index + 1
 
     await state.update_data(

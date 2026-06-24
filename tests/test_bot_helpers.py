@@ -29,6 +29,7 @@ class FakeState:
 
     async def clear(self):
         self.clear_called = True
+        self.data.clear()
         self.state = None
 
     async def set_state(self, state):
@@ -153,6 +154,98 @@ def test_interview_answer_collects_answers_and_asks_next(monkeypatch):
     assert "Question two?" in message.answers[-1]
 
 
+def test_interview_answer_strips_text_before_saving(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    message = FakeMessage("  First answer  ", user_id=123)
+    state = FakeState(
+        {
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [],
+            "interview_question_index": 0,
+        }
+    )
+
+    asyncio.run(bot.set_interview_answer(message, state))
+
+    assert state.data["interview_answers"] == [
+        {"question": "Question one?", "answer": "First answer"}
+    ]
+    assert state.data["interview_question_index"] == 1
+
+
+def test_non_text_interview_answer_does_not_advance(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    message = FakeMessage(None, user_id=123)
+    state = FakeState(
+        {
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [],
+            "interview_question_index": 0,
+        }
+    )
+
+    asyncio.run(bot.set_interview_answer(message, state))
+
+    assert state.data["interview_answers"] == []
+    assert state.data["interview_question_index"] == 0
+    assert state.state is None
+    assert message.answers == [
+        "Ответьте текстом, чтобы я мог учесть это при генерации проекта."
+    ]
+
+
+def test_whitespace_interview_answer_does_not_advance(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    message = FakeMessage("   ", user_id=123)
+    state = FakeState(
+        {
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [],
+            "interview_question_index": 0,
+        }
+    )
+
+    asyncio.run(bot.set_interview_answer(message, state))
+
+    assert state.data["interview_answers"] == []
+    assert state.data["interview_question_index"] == 0
+    assert message.answers == [
+        "Ответьте текстом, чтобы я мог учесть это при генерации проекта."
+    ]
+
+
+def test_too_long_interview_answer_does_not_advance(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    message = FakeMessage("x" * (bot.MAX_INTERVIEW_ANSWER_LENGTH + 1), user_id=123)
+    state = FakeState(
+        {
+            "interview_questions": ["Question one?", "Question two?"],
+            "interview_answers": [],
+            "interview_question_index": 0,
+        }
+    )
+
+    asyncio.run(bot.set_interview_answer(message, state))
+
+    assert state.data["interview_answers"] == []
+    assert state.data["interview_question_index"] == 0
+    assert message.answers == [
+        "Ответ слишком длинный. Сократите его до 1500 символов."
+    ]
+
+
 def test_interview_answer_finishes_flow_after_last_question(monkeypatch):
     monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
@@ -197,6 +290,34 @@ def test_start_during_active_generation_does_not_clear_state(monkeypatch):
 
     assert state.clear_called is False
     assert message.answers == ["⏳ Ваш проект уже генерируется. Дождитесь завершения."]
+
+
+def test_start_during_interview_clears_old_interview_data(monkeypatch):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+    bot.generation_lock.release(123)
+    message = FakeMessage("/start", user_id=123)
+    state = FakeState(
+        {
+            "custom_idea": "old idea",
+            "idea_analysis": {"project_type": "old"},
+            "interview_questions": ["Old question?"],
+            "interview_answers": [
+                {"question": "Old question?", "answer": "Old answer"}
+            ],
+            "interview_question_index": 0,
+        }
+    )
+    state.state = bot.Survey.interview_question
+
+    asyncio.run(bot.start(message, state))
+
+    assert state.clear_called is True
+    assert "interview_questions" not in state.data
+    assert "interview_answers" not in state.data
+    assert state.state == bot.Survey.project_type
 
 
 def test_project_name_empty_string_does_not_start_generation(monkeypatch):
