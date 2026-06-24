@@ -4,16 +4,6 @@ from typing import Any
 from domain_packs import get_domain_pack
 
 
-ASSISTANT_TYPES = {
-    "logistics": "logistics_document_assistant",
-    "document_automation": "document_automation_assistant",
-    "jira": "jira_workflow_assistant",
-    "zabbix": "monitoring_alert_assistant",
-    "knowledge_assistant": "internal_knowledge_assistant",
-    "generic": "general_work_assistant",
-}
-
-
 def _dedupe(items: list[Any]) -> list[str]:
     result = []
     seen = set()
@@ -50,42 +40,26 @@ def build_assistant_architecture(
     interview_answers: list[dict[str, str]] | None,
 ) -> dict[str, Any]:
     if isinstance(domain_pack, dict):
-        pack_name = str(domain_pack.get("name", "generic"))
-        pack = get_domain_pack(pack_name)
+        pack = get_domain_pack(str(domain_pack.get("name", "generic")))
     else:
         pack = get_domain_pack(domain_pack)
-        pack_name = pack["name"]
 
     if not isinstance(idea_analysis, dict):
         idea_analysis = {}
 
-    recommended_stack = _dedupe(
-        [
-            *pack["recommended_stack"],
-            *idea_analysis.get("recommended_stack", []),
-        ]
-    )
-    integrations = _dedupe(pack["integrations"])
-
     architecture_notes = _dedupe(
         [
-            f"Build a {ASSISTANT_TYPES.get(pack_name, ASSISTANT_TYPES['generic'])}.",
+            f"Build a {pack['assistant_type']}.",
             idea_analysis.get("main_goal", ""),
             *idea_analysis.get("required_features", []),
             *_answer_notes(interview_answers),
         ]
     )
-    production_considerations = _dedupe(
-        [
-            *pack["production_considerations"],
-            *idea_analysis.get("risk_notes", []),
-        ]
-    )
 
     return {
-        "assistant_type": ASSISTANT_TYPES.get(pack_name, ASSISTANT_TYPES["generic"]),
-        "recommended_stack": recommended_stack,
-        "integrations": integrations,
+        "assistant_type": pack["assistant_type"],
+        "recommended_stack": list(pack["recommended_stack"]),
+        "integrations": list(pack["integrations"]),
         "architecture_notes": architecture_notes,
-        "production_considerations": production_considerations,
+        "production_considerations": list(pack["production_considerations"]),
     }

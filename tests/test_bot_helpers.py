@@ -506,3 +506,87 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
         assert "README.md" in files_list
     finally:
         bot.cleanup_project_paths(data.get("_zip_path"), data.get("_project_dir"))
+
+
+def test_generate_project_archive_uses_logistics_domain_pack_end_to_end(monkeypatch, tmp_path):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+
+    async def generate_project_files(data):
+        return {
+            "README.md": data["domain_pack"]["name"],
+            "main.py": data["assistant_architecture"]["assistant_type"],
+        }
+
+    data = {
+        "project_name": "Logistics Bot",
+        "project_type": "Free idea",
+        "custom_idea": "Need logistics assistant for supplier documents and audit trail.",
+        "goal": "Test goal",
+        "experience": "Beginner",
+        "target_user": "Operations",
+        "model": "GPT",
+        "language": "Python",
+        "hosting": "Local",
+        "extra_answer": "",
+        "readme_detail": "",
+        "interview_answers": [],
+    }
+
+    monkeypatch.setattr(bot, "GENERATED_DIR", tmp_path)
+    monkeypatch.setattr(bot.ai_generator, "generate_project_files", generate_project_files)
+
+    zip_path, _, files_list = asyncio.run(bot.generate_project_archive(data, user_id=789))
+
+    try:
+        assert data["idea_analysis"]["domain"] == "logistics"
+        assert data["domain_pack"]["name"] == "logistics"
+        assert data["assistant_architecture"]["assistant_type"] == "logistics_document_assistant"
+        assert any("supplier" in item for item in data["domain_pack"]["integrations"])
+        assert "README.md" in files_list
+    finally:
+        bot.cleanup_project_paths(data.get("_zip_path"), data.get("_project_dir"))
+
+
+def test_generate_project_archive_uses_jira_domain_pack_end_to_end(monkeypatch, tmp_path):
+    monkeypatch.setenv("PYTHON_DOTENV_DISABLED", "1")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:dummy_token_for_tests")
+
+    bot = importlib.import_module("bot")
+
+    async def generate_project_files(data):
+        return {
+            "README.md": data["domain_pack"]["name"],
+            "main.py": data["assistant_architecture"]["assistant_type"],
+        }
+
+    data = {
+        "project_name": "Jira Bot",
+        "project_type": "Free idea",
+        "custom_idea": "Telegram bot for Jira ticket lifecycle comments and status notifications.",
+        "goal": "Test goal",
+        "experience": "Beginner",
+        "target_user": "Team",
+        "model": "GPT",
+        "language": "Python",
+        "hosting": "Local",
+        "extra_answer": "",
+        "readme_detail": "",
+        "interview_answers": [],
+    }
+
+    monkeypatch.setattr(bot, "GENERATED_DIR", tmp_path)
+    monkeypatch.setattr(bot.ai_generator, "generate_project_files", generate_project_files)
+
+    zip_path, _, files_list = asyncio.run(bot.generate_project_archive(data, user_id=790))
+
+    try:
+        assert data["idea_analysis"]["domain"] == "jira"
+        assert data["domain_pack"]["name"] == "jira"
+        assert data["assistant_architecture"]["assistant_type"] == "jira_workflow_assistant"
+        assert "Jira API" in data["assistant_architecture"]["recommended_stack"]
+        assert "README.md" in files_list
+    finally:
+        bot.cleanup_project_paths(data.get("_zip_path"), data.get("_project_dir"))

@@ -1,9 +1,10 @@
 import interview_builder
+from domain_packs import get_domain_pack
 
 
 def test_build_interview_questions_returns_list_of_strings():
     result = interview_builder.build_interview_questions(
-        {"questions": ["First?", "Second?"]}
+        {"project_type": "ticket_notification_bot"}
     )
 
     assert isinstance(result, list)
@@ -12,33 +13,20 @@ def test_build_interview_questions_returns_list_of_strings():
 
 def test_build_interview_questions_respects_max_questions():
     result = interview_builder.build_interview_questions(
-        {
-            "questions": [
-                "One?",
-                "Two?",
-                "Three?",
-            ]
-        },
+        {"project_type": "ticket_notification_bot"},
         max_questions=2,
     )
 
-    assert result == ["One?", "Two?"]
+    assert result == get_domain_pack("jira")["interview_questions"][:2]
 
 
-def test_build_interview_questions_removes_empty_questions():
+def test_build_interview_questions_returns_empty_for_zero_limit():
     result = interview_builder.build_interview_questions(
-        {"questions": ["", "  ", "Real question?"]}
+        {"project_type": "ticket_notification_bot"},
+        max_questions=0,
     )
 
-    assert result == ["Real question?"]
-
-
-def test_build_interview_questions_removes_duplicates():
-    result = interview_builder.build_interview_questions(
-        {"questions": ["Same?", "same?", "Other?"]}
-    )
-
-    assert result == ["Same?", "Other?"]
+    assert result == []
 
 
 def test_build_interview_questions_returns_fallback_for_empty_analysis():
@@ -47,65 +35,63 @@ def test_build_interview_questions_returns_fallback_for_empty_analysis():
     assert result == interview_builder.FALLBACK_QUESTIONS
 
 
-def test_document_automation_bot_adds_document_questions():
+def test_domain_pack_is_used_for_document_automation_questions():
     result = interview_builder.build_interview_questions(
         {
+            "domain": "document_automation",
             "project_type": "document_automation_bot",
-            "questions": [],
         },
         max_questions=10,
     )
 
-    assert "Какие форматы документов нужно поддерживать: DOCX, PDF или оба?" in result
-    assert "Нужно ли автоматически добавлять печать и подпись?" in result
+    assert result == get_domain_pack("document_automation")["interview_questions"]
+    assert any("DOCX" in question for question in result)
 
 
-def test_monitoring_alert_bot_adds_api_webhook_polling_question():
+def test_domain_pack_is_used_for_zabbix_questions():
     result = interview_builder.build_interview_questions(
         {
+            "domain": "zabbix",
             "project_type": "monitoring_alert_bot",
-            "questions": [],
         },
         max_questions=10,
     )
 
-    assert "Откуда получать события: API, webhook или polling?" in result
+    assert result == get_domain_pack("zabbix")["interview_questions"]
+    assert any("Zabbix" in question for question in result)
 
 
-def test_ticket_notification_bot_adds_events_and_chat_questions():
+def test_domain_pack_is_used_for_jira_questions():
     result = interview_builder.build_interview_questions(
         {
+            "domain": "jira",
             "project_type": "ticket_notification_bot",
-            "questions": [],
         },
         max_questions=10,
     )
 
-    assert (
-        "По каким событиям отправлять уведомления: новая задача, изменение статуса или комментарий?"
-        in result
-    )
-    assert "В какой Telegram чат отправлять уведомления?" in result
+    assert result == get_domain_pack("jira")["interview_questions"]
+    assert any("Jira" in question for question in result)
 
 
-def test_internal_ai_assistant_adds_knowledge_source_question():
+def test_domain_pack_is_used_for_knowledge_assistant_questions():
     result = interview_builder.build_interview_questions(
         {
+            "domain": "knowledge_assistant",
             "project_type": "internal_ai_assistant",
-            "questions": [],
         },
         max_questions=10,
     )
 
-    assert "Откуда ассистент должен брать знания: документы, база знаний или API?" in result
+    assert result == get_domain_pack("knowledge_assistant")["interview_questions"]
 
 
-def test_generic_type_does_not_break_function():
+def test_generic_type_uses_fallback_questions():
     result = interview_builder.build_interview_questions(
         {
+            "domain": "generic",
             "project_type": "generic_telegram_bot",
-            "questions": ["What should it do?"],
         }
     )
 
-    assert result == ["What should it do?"]
+    assert result == interview_builder.FALLBACK_QUESTIONS

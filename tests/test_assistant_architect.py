@@ -9,7 +9,6 @@ def test_build_assistant_architecture_generates_domain_architecture():
             "main_goal": "notify teams about ticket changes",
             "required_features": ["assignment notifications"],
             "recommended_stack": ["APScheduler"],
-            "risk_notes": ["avoid noisy notifications"],
         },
         [
             {
@@ -24,7 +23,17 @@ def test_build_assistant_architecture_generates_domain_architecture():
     assert "APScheduler" in architecture["recommended_stack"]
     assert "Jira webhooks" in architecture["integrations"]
     assert any("In progress and blocked" in note for note in architecture["architecture_notes"])
-    assert "avoid noisy notifications" in architecture["production_considerations"]
+    assert "Store Jira tokens only in environment variables." in architecture["production_considerations"]
+
+
+def test_build_assistant_architecture_uses_assistant_type_from_domain_pack():
+    architecture = assistant_architect.build_assistant_architecture(
+        domain_packs.get_domain_pack("logistics"),
+        {"main_goal": "process supplier documents"},
+        [],
+    )
+
+    assert architecture["assistant_type"] == domain_packs.get_domain_pack("logistics")["assistant_type"]
 
 
 def test_build_assistant_architecture_handles_empty_answers():

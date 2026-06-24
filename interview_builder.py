@@ -1,33 +1,14 @@
 # -*- coding: utf-8 -*-
 from typing import Any
 
+from domain_packs import (
+    GENERIC_INTERVIEW_QUESTIONS,
+    detect_domain_pack,
+    get_domain_pack,
+)
 
-FALLBACK_QUESTIONS = [
-    "Кто будет основным пользователем этого бота?",
-    "Какие данные бот должен получать на вход?",
-    "Какой результат бот должен отдавать?",
-    "Нужны ли интеграции с внешними сервисами?",
-    "Нужно ли хранить историю действий?",
-]
 
-SMART_QUESTIONS_BY_TYPE = {
-    "document_automation_bot": [
-        "Какие форматы документов нужно поддерживать: DOCX, PDF или оба?",
-        "Нужно ли автоматически добавлять печать и подпись?",
-    ],
-    "monitoring_alert_bot": [
-        "Откуда получать события: API, webhook или polling?",
-        "Нужно ли группировать повторяющиеся алерты?",
-    ],
-    "ticket_notification_bot": [
-        "По каким событиям отправлять уведомления: новая задача, изменение статуса или комментарий?",
-        "В какой Telegram чат отправлять уведомления?",
-    ],
-    "internal_ai_assistant": [
-        "Откуда ассистент должен брать знания: документы, база знаний или API?",
-        "Нужно ли ограничивать ответы только внутренними данными?",
-    ],
-}
+FALLBACK_QUESTIONS = list(GENERIC_INTERVIEW_QUESTIONS)
 
 
 def _dedupe_questions(questions: list[str]) -> list[str]:
@@ -55,15 +36,10 @@ def build_interview_questions(
     if not isinstance(idea_analysis, dict):
         idea_analysis = {}
 
-    raw_questions = idea_analysis.get("questions") or FALLBACK_QUESTIONS
-    if not isinstance(raw_questions, list):
-        raw_questions = FALLBACK_QUESTIONS
+    domain_name = detect_domain_pack("", idea_analysis)
+    if domain_name == "generic":
+        questions = FALLBACK_QUESTIONS
+    else:
+        questions = get_domain_pack(domain_name)["interview_questions"]
 
-    project_type = idea_analysis.get("project_type")
-    smart_questions = SMART_QUESTIONS_BY_TYPE.get(project_type, [])
-
-    questions = _dedupe_questions([*raw_questions, *smart_questions])
-    if not questions:
-        questions = _dedupe_questions(FALLBACK_QUESTIONS)
-
-    return questions[:max_questions]
+    return _dedupe_questions(questions)[:max_questions]

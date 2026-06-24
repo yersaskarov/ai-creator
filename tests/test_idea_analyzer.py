@@ -2,6 +2,7 @@ import idea_analyzer
 
 
 REQUIRED_KEYS = {
+    "domain",
     "project_type",
     "target_user",
     "main_goal",
@@ -25,6 +26,16 @@ def test_document_idea_is_detected_as_document_automation_bot():
     )
 
     assert result["project_type"] == "document_automation_bot"
+    assert result["domain"] == "document_automation"
+
+
+def test_logistics_idea_is_detected_as_document_automation_bot_with_logistics_domain():
+    result = idea_analyzer.analyze_project_idea(
+        "Need logistics assistant for supplier documents and audit trail."
+    )
+
+    assert result["project_type"] == "document_automation_bot"
+    assert result["domain"] == "logistics"
 
 
 def test_zabbix_camera_idea_is_detected_as_monitoring_alert_bot():
@@ -33,6 +44,7 @@ def test_zabbix_camera_idea_is_detected_as_monitoring_alert_bot():
     )
 
     assert result["project_type"] == "monitoring_alert_bot"
+    assert result["domain"] == "zabbix"
 
 
 def test_jira_idea_is_detected_as_ticket_notification_bot():
@@ -41,6 +53,7 @@ def test_jira_idea_is_detected_as_ticket_notification_bot():
     )
 
     assert result["project_type"] == "ticket_notification_bot"
+    assert result["domain"] == "jira"
 
 
 def test_assistant_faq_idea_is_detected_as_internal_ai_assistant():
@@ -49,12 +62,14 @@ def test_assistant_faq_idea_is_detected_as_internal_ai_assistant():
     )
 
     assert result["project_type"] == "internal_ai_assistant"
+    assert result["domain"] == "knowledge_assistant"
 
 
 def test_unknown_idea_falls_back_to_generic_telegram_bot():
     result = idea_analyzer.analyze_project_idea("Хочу небольшой бот для команды.")
 
     assert result["project_type"] == "generic_telegram_bot"
+    assert result["domain"] == "generic"
 
 
 def test_empty_idea_does_not_break_analysis():

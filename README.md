@@ -4,7 +4,7 @@
 
 AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
 
-Current status: v0.6 Sprint 2 in development.
+Current status: v0.6 Sprint 3 in development.
 
 It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
 
@@ -42,9 +42,9 @@ The project currently works as an MVP:
 - Stricter user-flow guards.
 - Domain Packs for logistics, document automation, Jira, Zabbix, and internal knowledge assistants.
 - Assistant Architect for domain-aware stack, integration, architecture, and production guidance.
-- 109 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview flow, domain packs, assistant architecture, access control, user-flow guards, and hardening edge cases.
+- 114 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview flow, domain packs, assistant architecture, access control, user-flow guards, and hardening edge cases.
 
-## v0.6 Sprint 2 Highlights
+## v0.6 Sprint 3 Highlights
 
 - Idea analyzer.
 - Interview question builder with an interactive Telegram interview flow.
@@ -53,10 +53,15 @@ The project currently works as an MVP:
 - Domain Packs.
 - Assistant Architect.
 - Domain-aware project generation.
+- Single Source of Domain Knowledge in `domain_packs.py`.
 - Access control with `ALLOWED_TELEGRAM_IDS`.
 - Per-user generation lock.
 - Stricter user-flow guards.
-- 109 tests passing.
+- 114 tests passing.
+
+## Single Source of Domain Knowledge
+
+Domain-specific assistant knowledge now lives in `domain_packs.py`. Each pack defines its keywords, assistant type, interview questions, recommended stack, integrations, and production considerations. `idea_analyzer.py`, `interview_builder.py`, and `assistant_architect.py` consume these packs instead of keeping separate domain-specific dictionaries.
 
 ## Architecture Diagram
 
@@ -297,4 +302,4 @@ Important limitation: generated code should still be reviewed before running. AI
 
 ## Project Status
 
-AI Creator is in v0.6 Sprint 2 development after the v0.5 release candidate. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
+AI Creator is in v0.6 Sprint 3 development after the v0.5 release candidate. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
