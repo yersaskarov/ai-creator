@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import re
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 import templates
+from path_safety import clean_relative_path as _safe_path
 
 RESERVED_WINDOWS_NAMES = {
     "CON",
@@ -25,21 +25,10 @@ def make_safe_filename(name: str) -> str:
 
 
 def _clean_relative_path(path: str) -> str:
-    normalized = str(path).replace("\\", "/").strip()
-    if not normalized or normalized == ".":
-        raise ValueError("File path must be a non-empty relative path")
-    if ".." in normalized:
-        raise ValueError("File path must not contain parent traversal")
-    if re.search(r"(^|/)[A-Za-z]:", normalized):
-        raise ValueError("File path must not contain a drive prefix")
-
-    posix_path = PurePosixPath(normalized)
-    if posix_path.is_absolute():
-        raise ValueError("File path must be relative")
-    if any(part in ("", ".", "..") for part in posix_path.parts):
-        raise ValueError("File path contains unsafe path segments")
-
-    return "/".join(posix_path.parts)
+    result = _safe_path(path)
+    if result is None:
+        raise ValueError(f"Unsafe or invalid file path: {path!r}")
+    return result
 
 
 def build_static_files(data: dict) -> dict[str, str]:

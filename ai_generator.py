@@ -2,9 +2,9 @@
 import os
 import json
 import logging
-import re
-from pathlib import PurePosixPath
 from typing import Any
+
+from path_safety import clean_relative_path as _clean_relative_path
 
 DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 8000
@@ -382,24 +382,6 @@ def _build_generation_prompt(data: dict[str, Any]) -> str:
 8. Не добавляй markdown вокруг JSON.
 """
 
-
-def _clean_relative_path(path: str) -> str | None:
-    path = path.replace("\\", "/").strip()
-
-    if not path or path == ".":
-        return None
-    if ".." in path:
-        return None
-    if re.search(r"(^|/)[A-Za-z]:", path):
-        return None
-    if PurePosixPath(path).is_absolute():
-        return None
-
-    parts = PurePosixPath(path).parts
-    if any(part in ("", ".", "..") for part in parts):
-        return None
-
-    return "/".join(parts)
 
 
 def _parse_files_from_json(text: str) -> dict[str, str] | None:

@@ -1,6 +1,6 @@
 import pytest
 
-from runtime_guards import GenerationLock, is_user_allowed, parse_allowed_ids
+from runtime_guards import GenerationCooldown, GenerationLock, is_user_allowed, parse_allowed_ids
 
 
 def test_parse_allowed_ids_none_returns_empty_set():
@@ -66,3 +66,33 @@ def test_generation_lock_release_is_safe_for_missing_user():
     lock.release(123)
 
     assert lock.is_active(123) is False
+
+
+def test_generation_cooldown_disabled_when_cooldown_is_zero():
+    cooldown = GenerationCooldown(0)
+    cooldown.record_finished(123)
+    assert cooldown.seconds_remaining(123) == 0.0
+
+
+def test_generation_cooldown_returns_zero_for_new_user():
+    cooldown = GenerationCooldown(60)
+    assert cooldown.seconds_remaining(999) == 0.0
+
+
+def test_generation_cooldown_blocks_immediately_after_generation():
+    cooldown = GenerationCooldown(60)
+    cooldown.record_finished(123)
+    assert cooldown.seconds_remaining(123) > 0
+
+
+def test_generation_cooldown_does_not_affect_other_users():
+    cooldown = GenerationCooldown(60)
+    cooldown.record_finished(123)
+    assert cooldown.seconds_remaining(456) == 0.0
+
+
+def test_generation_cooldown_zero_does_not_record():
+    cooldown = GenerationCooldown(0)
+    cooldown.record_finished(123)
+    # Internal dict must stay empty when cooldown is disabled
+    assert 123 not in cooldown._last_finished

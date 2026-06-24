@@ -25,7 +25,7 @@ from project_builder import (
     make_safe_filename,
     write_files,
 )
-from runtime_guards import GenerationLock, is_user_allowed, parse_allowed_ids
+from runtime_guards import GenerationCooldown, GenerationLock, is_user_allowed, parse_allowed_ids
 from zip_utils import create_project_zip
 
 load_dotenv()
@@ -37,6 +37,8 @@ MAX_CUSTOM_IDEA_LENGTH = 1500
 MAX_INTERVIEW_ANSWER_LENGTH = 1500
 MAX_PROJECT_NAME_LENGTH = 80
 DEFAULT_AI_GENERATION_TIMEOUT_SECONDS = 120
+DEFAULT_GENERATION_COOLDOWN_SECONDS = 60
+DEFAULT_GENERATION_PIPELINE_TIMEOUT_SECONDS = 180
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
@@ -97,6 +99,15 @@ AI_GENERATION_TIMEOUT_SECONDS = get_int_env(
     "AI_GENERATION_TIMEOUT_SECONDS",
     DEFAULT_AI_GENERATION_TIMEOUT_SECONDS,
 )
+GENERATION_COOLDOWN_SECONDS = get_int_env(
+    "GENERATION_COOLDOWN_SECONDS",
+    DEFAULT_GENERATION_COOLDOWN_SECONDS,
+)
+GENERATION_PIPELINE_TIMEOUT_SECONDS = get_int_env(
+    "GENERATION_PIPELINE_TIMEOUT_SECONDS",
+    DEFAULT_GENERATION_PIPELINE_TIMEOUT_SECONDS,
+)
+generation_cooldown = GenerationCooldown(GENERATION_COOLDOWN_SECONDS)
 
 
 def keyboard(buttons: list[str]) -> ReplyKeyboardMarkup:
@@ -559,6 +570,12 @@ async def finish_survey(message: types.Message, state: FSMContext):
         return
 
     user_id = message.from_user.id
+
+    remaining = generation_cooldown.seconds_remaining(user_id)
+    if remaining > 0:
+        await message.answer("⏳ Подождите немного перед новой генерацией.")
+        return
+
     if not generation_lock.acquire(user_id):
         await message.answer("⏳ Ваш проект уже генерируется. Дождитесь завершения.")
         return
@@ -573,7 +590,10 @@ async def finish_survey(message: types.Message, state: FSMContext):
 
         await message.answer("Собираю проект... ⏳")
 
-        zip_path, generated_project_name, files_list = await generate_project_archive(data, user_id)
+        zip_path, generated_project_name, files_list = await asyncio.wait_for(
+            generate_project_archive(data, user_id),
+            timeout=GENERATION_PIPELINE_TIMEOUT_SECONDS,
+        )
         project_dir = zip_path.parent / zip_path.stem
 
         await message.answer_document(
@@ -608,6 +628,16 @@ async def finish_survey(message: types.Message, state: FSMContext):
 
         await message.answer(summary)
         await state.clear()
+    except asyncio.TimeoutError:
+        logger.warning(
+            "Pipeline timed out after %s seconds for user %s",
+            GENERATION_PIPELINE_TIMEOUT_SECONDS,
+            user_id,
+        )
+        await message.answer(
+            "Генерация заняла слишком много времени и была остановлена. "
+            "Попробуйте ещё раз через /start."
+        )
     except Exception:
         logger.exception("Project generation failed")
         await message.answer(
@@ -619,6 +649,7 @@ async def finish_survey(message: types.Message, state: FSMContext):
         cleanup_project_dir = project_dir or data.get("_project_dir")
         cleanup_project_paths(cleanup_zip_path, cleanup_project_dir)
         generation_lock.release(user_id)
+        generation_cooldown.record_finished(user_id)
 
 
 @dp.message()

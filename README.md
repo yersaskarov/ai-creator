@@ -385,6 +385,23 @@ v0.8:
 - Structured logging.
 - Rate limits and quotas.
 
+## Security
+
+**Never commit `.env`.**  The `.env` file is in `.gitignore`.
+Copy `.env.example` and fill in your own values; do not share or push the file.
+
+Secret scanning runs automatically on every push via the `secret_scanning.yml`
+GitHub Actions workflow (Gitleaks).  If you rotate a key, revoke the old one
+immediately — assume any committed secret is compromised.
+
+Generation safety:
+
+- Per-user cooldown (`GENERATION_COOLDOWN_SECONDS`, default 60 s) prevents generation spam.
+- Full pipeline timeout (`GENERATION_PIPELINE_TIMEOUT_SECONDS`, default 180 s) ensures
+  the bot cannot hang indefinitely on a slow AI response.
+- All user input is sanitised (newlines collapsed) before entering prompts.
+- Path traversal is blocked at two independent layers (`path_safety.py`).
+
 ## Portfolio And Learning Value
 
 AI Creator demonstrates:
