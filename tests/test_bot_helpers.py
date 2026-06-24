@@ -461,7 +461,13 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
 
     async def generate_project_files(data):
         return {
-            "README.md": "\n".join(data["interview_questions"]),
+            "README.md": "\n".join(
+                [
+                    *data["interview_questions"],
+                    data["domain_pack"]["name"],
+                    data["assistant_architecture"]["assistant_type"],
+                ]
+            ),
             "main.py": "print('ok')",
         }
 
@@ -494,6 +500,8 @@ def test_generate_project_archive_adds_idea_analysis_for_custom_idea(monkeypatch
         assert data["idea_analysis"]["project_type"] == "document_automation_bot"
         assert data["interview_questions"]
         assert data["interview_answers"][0]["answer"] == "PDF"
+        assert data["domain_pack"]["name"] == "document_automation"
+        assert data["assistant_architecture"]["assistant_type"] == "document_automation_assistant"
         assert any("DOCX" in question for question in data["interview_questions"])
         assert "README.md" in files_list
     finally:

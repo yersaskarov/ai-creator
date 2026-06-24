@@ -187,6 +187,73 @@ def test_build_generation_prompt_without_interview_questions_still_works():
     assert "## Уточняющие вопросы для проекта" not in prompt
 
 
+def test_build_generation_prompt_includes_domain_context():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Jira Bot",
+            "custom_idea": "jira notifications",
+            "domain_pack": {
+                "name": "jira",
+                "description": "Assistants for Jira ticket lifecycle.",
+                "recommended_stack": ["Python", "Jira API"],
+                "integrations": ["Jira webhooks"],
+                "production_considerations": [],
+            },
+        }
+    )
+
+    assert "## Domain Context" in prompt
+    assert "jira" in prompt
+    assert "Jira webhooks" in prompt
+
+
+def test_build_generation_prompt_includes_architecture_block():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Alert Bot",
+            "custom_idea": "zabbix alerts",
+            "assistant_architecture": {
+                "assistant_type": "monitoring_alert_assistant",
+                "recommended_stack": ["Python", "Zabbix API"],
+                "integrations": ["Telegram alerts"],
+                "architecture_notes": ["Route alerts by severity"],
+                "production_considerations": [],
+            },
+        }
+    )
+
+    assert "## Recommended Architecture" in prompt
+    assert "monitoring_alert_assistant" in prompt
+    assert "Route alerts by severity" in prompt
+
+
+def test_build_generation_prompt_includes_production_considerations():
+    prompt = ai_generator._build_generation_prompt(
+        {
+            "project_name": "Docs Bot",
+            "custom_idea": "document automation",
+            "domain_pack": {
+                "name": "document_automation",
+                "description": "Document automation",
+                "recommended_stack": [],
+                "integrations": [],
+                "production_considerations": ["Validate templates before rendering."],
+            },
+            "assistant_architecture": {
+                "assistant_type": "document_automation_assistant",
+                "recommended_stack": [],
+                "integrations": [],
+                "architecture_notes": [],
+                "production_considerations": ["Do not hardcode signatures."],
+            },
+        }
+    )
+
+    assert "## Production Considerations" in prompt
+    assert "Validate templates before rendering." in prompt
+    assert "Do not hardcode signatures." in prompt
+
+
 def test_generate_with_openai_uses_max_tokens(monkeypatch):
     captured_kwargs = {}
 

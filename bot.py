@@ -15,6 +15,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 
 import ai_generator
+from assistant_architect import build_assistant_architecture
+from domain_packs import detect_domain_pack, get_domain_pack
 from idea_analyzer import analyze_project_idea
 from interview_builder import build_interview_questions
 from project_builder import (
@@ -485,6 +487,15 @@ async def generate_project_archive(data: dict, user_id: int) -> tuple[Path, str,
                 )
             if "interview_answers" not in data:
                 data["interview_answers"] = []
+            if "domain_pack" not in data:
+                domain_name = detect_domain_pack(custom_idea, data["idea_analysis"])
+                data["domain_pack"] = get_domain_pack(domain_name)
+            if "assistant_architecture" not in data:
+                data["assistant_architecture"] = build_assistant_architecture(
+                    data["domain_pack"],
+                    data["idea_analysis"],
+                    data["interview_answers"],
+                )
 
         ai_files = await asyncio.wait_for(
             ai_generator.generate_project_files(data),
