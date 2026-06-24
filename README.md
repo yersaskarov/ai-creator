@@ -2,93 +2,172 @@
 
 [![Tests](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml/badge.svg)](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml)
 
-AI Creator is a Telegram bot that turns a short product questionnaire into a ready-to-run starter project packaged as a ZIP archive.
+AI assistant builder that turns work problems into generated Telegram bots and AI-agent starter projects.
 
-Current status: v0.6 Sprint 4 in development.
+Status: v0.6 prototype  
+Tests: 124 passing  
+Docker: supported  
+CI: GitHub Actions  
+Stage: controlled pilot / portfolio project
 
-It supports Claude-powered project generation, a safe template fallback mode, Python and JavaScript/TypeScript starters, and basic safety checks around AI-generated files.
+## What It Is
 
-## Project Overview
+AI Creator is an assistant builder platform prototype. It is no longer just a Telegram bot generator: it takes a work problem written in plain language, asks clarifying questions, detects the professional domain, builds an Agent Blueprint, and generates a ZIP project with starter code.
 
-AI Creator is built for beginners and solo builders who want a practical project scaffold instead of a long text answer. The user answers a guided Telegram survey, chooses a project type, language, hosting preference, and AI model, then receives a ZIP archive with source files, dependency files, `.env.example`, prompts, and a README.
+The goal is to help a user move from "I have a repetitive work problem" to a practical generated assistant scaffold with code, prompts, configuration examples, and a README.
 
-The project currently works as an MVP:
+## Why It Exists
 
-- If Claude/OpenAI is configured, AI Creator asks the model to generate a compact starter project.
-- If AI generation fails, times out, returns invalid JSON, or is not configured, the bot falls back to safe built-in templates.
-- For custom ideas, the bot analyzes the idea, asks clarifying interview questions one by one, and passes the answers into generation.
-- AI Creator now includes Domain Packs, Assistant Architect, and domain-aware project generation for work assistants.
-- Agent Blueprint Layer turns the problem, domain context, interview answers, and architecture into a structured product blueprint.
-- Generated files are validated before being written to disk.
-- The final project is sent to the user as a Telegram document.
+Most people describe automation needs as messy workplace stories, not as software specs. AI Creator turns that raw problem statement into a structured generation pipeline:
 
-## Features
+- it analyzes the idea;
+- asks focused follow-up questions;
+- detects the domain;
+- applies domain knowledge;
+- designs the assistant architecture;
+- builds an Agent Blueprint;
+- generates a starter project;
+- packages the result as a ZIP archive in Telegram.
+
+This makes generated projects more grounded than a generic one-shot prompt.
+
+## Example Use Cases
+
+Zabbix Camera Monitoring Agent:
+
+- Problem: cameras go down and disappear from reports after 5 days.
+- Generated direction: track current status, `first_seen_down`, long-down cameras, and send Telegram summaries.
+
+Logistics Document Bot:
+
+- Flow: DOCX template -> data replacement -> PDF -> stamp/signature.
+- Useful for supplier documents, shipment paperwork, and repeated document generation.
+
+Jira Notification Bot:
+
+- Flow: new issues, status changes, comments -> Telegram notifications.
+- Useful for teams that need fast ticket lifecycle updates.
+
+Internal Knowledge Assistant:
+
+- Flow: FAQ/docs/internal knowledge base -> answers with source references.
+- Useful for routine employee questions where unknown answers should be refused instead of invented.
+
+## Current Pipeline
+
+```text
+User problem
+   |
+   v
+Idea Analyzer
+   |
+   v
+Interactive Interview
+   |
+   v
+Domain Pack Detection
+   |
+   v
+Assistant Architect
+   |
+   v
+Agent Blueprint
+   |
+   v
+AI Project Generator
+   |
+   v
+Project Builder
+   |
+   v
+ZIP archive
+```
+
+If Claude/OpenAI is not configured, times out, returns invalid JSON, or fails validation, AI Creator falls back to safe built-in templates.
+
+## Current Capabilities
 
 - Telegram bot built with `aiogram 3`.
-- Guided FSM questionnaire for project requirements.
-- Claude API support through the Anthropic SDK.
-- OpenAI provider layer is present and can be configured.
-- Template fallback mode for safe project generation.
+- Guided FSM questionnaire.
+- Interactive interview flow for custom ideas.
+- Rule-based idea analysis.
+- Domain Pack detection.
+- Domain-aware assistant architecture.
+- Agent Blueprint generation.
+- Claude and OpenAI provider support.
+- Template fallback mode.
 - Python and JavaScript/TypeScript starter projects.
-- ZIP export delivered directly in Telegram.
-- Docker Compose deployment support.
-- Basic validation for AI-generated output:
-  - JSON parsing guard.
-  - Path traversal protection.
-  - Maximum file count.
-  - Maximum file size.
-- Configurable AI timeout.
+- Safe file writing and ZIP packaging.
 - Access control through `ALLOWED_TELEGRAM_IDS`.
 - Per-user generation lock.
-- Stricter user-flow guards.
-- Domain Packs for logistics, document automation, Jira, Zabbix, and internal knowledge assistants.
-- Assistant Architect for domain-aware stack, integration, architecture, and production guidance.
-- 124 tests passing for parser safety, project building, ZIP creation, fallback, idea analysis, interview flow, domain packs, assistant architecture, agent blueprints, access control, user-flow guards, and hardening edge cases.
+- Docker and Docker Compose support.
+- GitHub Actions checks.
+- 124 passing tests.
 
-## v0.6 Sprint 4 Highlights
+## Domain Packs
 
-- Idea analyzer.
-- Interview question builder with an interactive Telegram interview flow.
-- Structured prompt enrichment.
-- Interview answers included in AI generation prompts.
-- Domain Packs.
-- Assistant Architect.
-- Domain-aware project generation.
-- Single Source of Domain Knowledge in `domain_packs.py`.
-- Agent Blueprint Layer.
-- Problem -> Blueprint -> Project generation.
-- Domain-aware acceptance criteria.
-- Access control with `ALLOWED_TELEGRAM_IDS`.
-- Per-user generation lock.
-- Stricter user-flow guards.
-- 124 tests passing.
+Domain-specific knowledge lives in `domain_packs.py`. Each pack defines keywords, assistant type, interview questions, recommended stack, integrations, and production considerations.
 
-## Agent Blueprint Layer
+Current packs:
 
-AI Creator now builds an Agent Blueprint before generation. The blueprint captures the problem statement, target users, inputs, outputs, agent actions, integrations, data storage, security notes, deployment notes, and acceptance criteria. The generation prompt treats this blueprint as the main product specification, so generated projects are guided by domain-aware acceptance criteria instead of only a loose idea description.
+- Logistics.
+- Document Automation.
+- Jira Assistant.
+- Zabbix Monitoring.
+- Internal Knowledge Assistant.
+- Generic fallback.
 
-## Single Source of Domain Knowledge
+## Agent Blueprint
 
-Domain-specific assistant knowledge now lives in `domain_packs.py`. Each pack defines its keywords, assistant type, interview questions, recommended stack, integrations, and production considerations. `idea_analyzer.py`, `interview_builder.py`, and `assistant_architect.py` consume these packs instead of keeping separate domain-specific dictionaries.
+The Agent Blueprint is the main product specification passed into generation. It includes:
 
-## Architecture Diagram
+- problem statement;
+- target users;
+- inputs;
+- outputs;
+- agent actions;
+- integrations;
+- data storage;
+- security notes;
+- deployment notes;
+- acceptance criteria.
+
+The generated project prompt instructs the model to follow the blueprint and include acceptance criteria and production notes in the generated README.
+
+## Core Modules
+
+- `bot.py`: Telegram FSM, user flow, access guard, and generation lock.
+- `idea_analyzer.py`: free-form idea analysis and project type detection.
+- `interview_builder.py`: clarifying interview questions from Domain Packs.
+- `domain_packs.py`: single source of domain knowledge.
+- `assistant_architect.py`: assistant architecture layer.
+- `agent_blueprint.py`: problem-to-agent blueprint builder.
+- `ai_generator.py`: Claude/OpenAI generation, prompt enrichment, parser safety, and fallback trigger.
+- `project_builder.py`: generated project file assembly and guarded file writes.
+- `zip_utils.py`: safe ZIP archive creation.
+- `runtime_guards.py`: access control helpers and per-user generation lock.
+- `templates.py`: built-in fallback projects.
+
+## Architecture
 
 ```mermaid
 flowchart TD
-    User[Telegram User] --> Bot[aiogram Bot]
-    Bot --> FSM[Survey FSM]
-    FSM --> Data[Collected Project Requirements]
-    Data --> Generator[ai_generator.py]
-    Generator --> Provider{AI Provider}
-    Provider -->|anthropic| Claude[Claude API]
-    Provider -->|openai| OpenAI[OpenAI API]
+    User[Telegram user] --> Bot[bot.py / aiogram FSM]
+    Bot --> Idea[Idea Analyzer]
+    Idea --> Interview[Interactive Interview]
+    Interview --> Domain[Domain Pack Detection]
+    Domain --> Architect[Assistant Architect]
+    Architect --> Blueprint[Agent Blueprint]
+    Blueprint --> Generator[AI Project Generator]
+    Generator --> Provider{AI provider}
+    Provider -->|OpenAI| OpenAI[OpenAI API]
+    Provider -->|Anthropic| Claude[Claude API]
     Provider -->|not configured / failed| Fallback[Template Fallback]
-    Claude --> Parser[JSON Parser + Safety Limits]
-    OpenAI --> Parser
-    Parser -->|valid files| Writer[Write Project Files]
-    Parser -->|invalid / timeout / error| Fallback
-    Fallback --> Writer
-    Writer --> Zip[Create ZIP Archive]
+    OpenAI --> Parser[JSON parser + file safety]
+    Claude --> Parser
+    Parser --> Builder[Project Builder]
+    Fallback --> Builder
+    Builder --> Zip[ZIP archive]
     Zip --> Bot
     Bot --> User
 ```
@@ -97,53 +176,68 @@ flowchart TD
 
 ```text
 .
-|-- ai_generator.py       # AI provider integration and generated-file validation
-|-- agent_blueprint.py    # Rule-based product blueprint builder for generated assistants
-|-- assistant_architect.py # Domain-aware assistant architecture builder
-|-- bot.py                # Telegram bot, FSM flow, and generation orchestration
-|-- domain_packs.py       # Domain knowledge packs and domain detection
-|-- idea_analyzer.py      # Rule-based idea analysis for free-form project descriptions
-|-- interview_builder.py  # Clarifying question builder for analyzed ideas
-|-- project_builder.py    # Project file assembly helpers
-|-- runtime_guards.py     # Runtime state and user-flow guard helpers
-|-- templates.py          # Built-in fallback project templates
-|-- zip_utils.py          # ZIP archive creation utility
-|-- docker-compose.yml    # Docker Compose deployment config
-|-- requirements.txt      # Runtime dependencies
-|-- requirements-dev.txt  # Development/test dependencies
-|-- tests/                # Unit tests
-|   |-- test_idea_analyzer.py
-|   |-- test_interview_builder.py
-|   |-- test_project_builder.py
-|   `-- test_zip_utils.py
-|-- .env.example          # Safe environment variable template
+|-- ai_generator.py
+|-- agent_blueprint.py
+|-- assistant_architect.py
+|-- bot.py
+|-- domain_packs.py
+|-- idea_analyzer.py
+|-- interview_builder.py
+|-- project_builder.py
+|-- runtime_guards.py
+|-- templates.py
+|-- zip_utils.py
+|-- docker-compose.yml
+|-- requirements.txt
+|-- requirements-dev.txt
+|-- tests/
+|-- .env.example
 `-- README.md
 ```
 
-## Screenshots
+## Security And Safety
 
-Screenshots are planned for the next showcase pass.
+AI Creator includes several guardrails:
 
-Recommended screenshots to add:
+- path traversal protection for AI-generated files;
+- safe ZIP root validation;
+- AI output file count and file size limits;
+- provider timeout settings;
+- invalid AI JSON fallback;
+- access control via `ALLOWED_TELEGRAM_IDS`;
+- per-user generation lock;
+- `.env` based secrets;
+- no secrets committed to the repository;
+- template fallback when AI generation is unavailable or unsafe.
 
-- Telegram `/start` screen.
-- Project questionnaire flow.
-- Successful AI-mode ZIP response.
-- Generated project file tree.
-- Example generated `README.md`.
+Generated projects are starter scaffolds and should be reviewed before running.
 
-## Installation
+## Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/yersaskarov/ai-creator.git
+cd ai-creator
+```
+
+Create and activate a virtual environment:
 
 ```bash
 python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
 On macOS or Linux:
 
 ```bash
+python -m venv venv
 source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -155,35 +249,32 @@ pip install -r requirements-dev.txt
 
 ## Configuration
 
-Copy `.env.example` to `.env` and fill in the values you need:
+Copy `.env.example` to `.env`:
 
 ```bash
-TELEGRAM_BOT_TOKEN=
-ALLOWED_TELEGRAM_IDS=
-AI_CREATOR_PROVIDER=
-AI_GENERATION_TIMEOUT_SECONDS=120
-AI_PROVIDER_TIMEOUT_SECONDS=90
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-sonnet-4-6
-ANTHROPIC_MAX_TOKENS=8000
+copy .env.example .env
+```
+
+On macOS or Linux:
+
+```bash
+cp .env.example .env
 ```
 
 Environment variables:
 
 - `TELEGRAM_BOT_TOKEN`: required Telegram bot token from BotFather.
-- `ALLOWED_TELEGRAM_IDS`: optional comma-separated Telegram user IDs. Empty value allows everyone.
-- `AI_CREATOR_PROVIDER`: optional AI provider. Supported values are `openai` and `anthropic`.
-- `AI_GENERATION_TIMEOUT_SECONDS`: optional timeout before falling back to templates.
-- `AI_PROVIDER_TIMEOUT_SECONDS`: optional HTTP timeout for OpenAI/Anthropic SDK calls.
-- `OPENAI_API_KEY`: required only when `AI_CREATOR_PROVIDER=openai`.
+- `ALLOWED_TELEGRAM_IDS`: optional comma-separated Telegram user IDs. Empty value allows all users.
+- `AI_CREATOR_PROVIDER`: optional provider, `openai` or `anthropic`.
+- `AI_GENERATION_TIMEOUT_SECONDS`: total generation timeout before fallback.
+- `AI_PROVIDER_TIMEOUT_SECONDS`: HTTP timeout for AI SDK calls.
+- `OPENAI_API_KEY`: required when `AI_CREATOR_PROVIDER=openai`.
 - `OPENAI_MODEL`: optional OpenAI model override.
-- `ANTHROPIC_API_KEY`: required only when `AI_CREATOR_PROVIDER=anthropic`.
+- `ANTHROPIC_API_KEY`: required when `AI_CREATOR_PROVIDER=anthropic`.
 - `ANTHROPIC_MODEL`: optional Anthropic model override.
-- `ANTHROPIC_MAX_TOKENS`: optional max output token limit for Anthropic generation.
+- `ANTHROPIC_MAX_TOKENS`: optional Anthropic output token limit.
 
-If no AI provider is configured, AI Creator uses built-in templates.
+If no provider is configured, AI Creator uses built-in templates.
 
 ## Running
 
@@ -205,27 +296,19 @@ Build the image:
 docker build -t ai-creator .
 ```
 
-Run the bot with environment variables from `.env`:
+Run with environment variables:
 
 ```bash
 docker run --env-file .env ai-creator
 ```
 
-The container starts the Telegram bot with:
-
-```bash
-python bot.py
-```
-
 ## Docker Compose
-
-Start the bot on a VPS:
 
 ```bash
 docker compose up -d --build
 ```
 
-Stop the bot:
+Stop:
 
 ```bash
 docker compose down
@@ -233,83 +316,69 @@ docker compose down
 
 ## Testing
 
-Run syntax checks:
+Syntax checks:
 
 ```bash
 python -m py_compile bot.py ai_generator.py templates.py project_builder.py zip_utils.py idea_analyzer.py interview_builder.py runtime_guards.py domain_packs.py assistant_architect.py agent_blueprint.py
 ```
 
-Run the unit test suite:
+Unit tests:
 
 ```bash
-venv\Scripts\python.exe -m pytest
+python -m pytest
 ```
 
-Current tests cover:
+On the project venv in Windows:
 
-- Safe relative path validation.
-- JSON parsing for AI-generated files.
-- Maximum AI file count.
-- Maximum AI file size.
-- Project folder name sanitization.
-- Idea analysis for free-form project descriptions.
-- Interview question building from idea analysis.
-- Domain pack detection.
-- Assistant architecture generation.
-- Agent blueprint generation.
-- Domain-aware prompt enrichment.
-- Project builder file assembly and file writing.
-- ZIP archive creation and nested directory preservation.
-- Prompt-file inclusion rules for template projects.
+```bash
+.\venv\Scripts\python.exe -m pytest
+```
 
-The tests do not call Claude/OpenAI and do not require real API keys.
+Current test status: 124 passing.
 
-## Deployment
+The tests cover parser safety, path validation, project building, ZIP creation, fallback behavior, idea analysis, interview flow, domain packs, assistant architecture, agent blueprints, access control, generation locks, and prompt enrichment. They do not call real OpenAI or Anthropic APIs.
 
-For a simple VPS deployment:
+## Limitations
 
-1. Clone the repository.
-2. Create a `.env` file from `.env.example`.
-3. Install dependencies with `pip install -r requirements.txt`.
-4. Run the bot with `python bot.py`.
-5. Use a process manager such as `systemd`, `supervisor`, or Docker restart policies for long-running usage.
-
-Production deployment still needs persistent FSM storage, structured logs, monitoring, and rate limits.
-
-## Security
-
-Never commit `.env`. It may contain real Telegram, OpenAI, or Anthropic tokens. This repository includes `.env.example` only as a safe template with empty secret values.
-
-AI Creator includes basic safety checks:
-
-- `.env`, virtual environments, generated projects, caches, and ZIP archives are ignored by Git.
-- AI-generated paths are normalized and checked against path traversal.
-- AI output is limited by file count and file size.
-- Invalid JSON from an AI provider triggers fallback mode instead of crashing the bot.
-
-Important limitation: generated code should still be reviewed before running. AI Creator creates starter projects, not audited production systems.
+- Not ready for unattended production use yet.
+- FSM state is still in memory; Redis FSM is not implemented.
+- No distributed queue or worker for long-running generation.
+- No monitoring dashboard or healthcheck endpoint.
+- No user quotas or rate limiting yet.
+- Domain detection is rule-based.
+- Agent Blueprint generation is rule-based.
+- Generated projects need human review before use.
+- Docker still needs production hardening such as a non-root user.
 
 ## Roadmap
 
-- Add persistent FSM storage for production deployments.
-- Add Dockerfile and deployment documentation.
-- Add GitHub Actions for syntax checks and unit tests.
-- Add structured logging for AI fallback reasons.
-- Add user-level rate limits and generation quotas.
-- Add background job queue for long-running AI generation.
-- Add screenshots and demo GIFs.
-- Add generated-project preview before ZIP delivery.
-- Add more templates and provider-specific generation strategies.
+v0.7:
 
-## Roadmap v0.3
+- Run a real controlled pilot with lead feedback.
+- Add more Domain Packs: accounting, warehouse, HR, legal, support.
+- Improve generated project quality.
+- Add Telegram preview of detected domain and Agent Blueprint.
+- Let users confirm or adjust the detected domain before generation.
 
-- Add CI with GitHub Actions.
-- Add Docker support.
-- Improve GitHub showcase documentation.
-- Keep the current Claude/OpenAI generation flow stable.
-- Preserve template fallback as the safe default.
-- Prepare the codebase for future extraction of project-building services.
+v0.8:
 
-## Project Status
+- Redis FSM.
+- Queue / worker.
+- Monitoring and healthcheck.
+- Non-root Docker user.
+- Structured logging.
+- Rate limits and quotas.
 
-AI Creator is in v0.6 Sprint 4 development after the v0.5 release candidate. It is functional enough for a controlled pilot, but production use still needs persistent state, deployment hardening, monitoring, rate limiting, and stronger validation of generated code.
+## Portfolio And Learning Value
+
+AI Creator demonstrates:
+
+- Python async Telegram bot development;
+- AI provider integration;
+- prompt and parser hardening;
+- domain-aware generation;
+- rule-based product architecture layers;
+- security-focused file handling;
+- Docker and CI usage;
+- test coverage across core behavior;
+- product thinking around real work assistants.
