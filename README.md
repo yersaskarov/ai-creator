@@ -5,7 +5,7 @@
 AI assistant builder that turns work problems into generated Telegram bots and AI-agent starter projects.
 
 Status: v0.6 prototype  
-Tests: 124 passing  
+Tests: 129 passing  
 Docker: supported  
 CI: GitHub Actions  
 Stage: controlled pilot / portfolio project
@@ -52,6 +52,21 @@ Internal Knowledge Assistant:
 
 - Flow: FAQ/docs/internal knowledge base -> answers with source references.
 - Useful for routine employee questions where unknown answers should be refused instead of invented.
+
+Trading Journal Assistant:
+
+- Flow: manual trade entries -> RR/winrate statistics -> weekly review.
+- Useful for traders who need reproducible trade history and review reports.
+
+Prop Firm Risk Tracker:
+
+- Flow: trade activity -> daily loss and drawdown checks -> Telegram risk notifications.
+- Useful for FTMO, The5ers, Funding Pips, and similar challenge workflows.
+
+TradingView Alert Bot:
+
+- Flow: TradingView webhook alerts -> Telegram notifications -> optional journal records.
+- Useful for signal tracking across Forex, XAUUSD, and other traded instruments.
 
 ## Current Pipeline
 
@@ -102,7 +117,7 @@ If Claude/OpenAI is not configured, times out, returns invalid JSON, or fails va
 - Per-user generation lock.
 - Docker and Docker Compose support.
 - GitHub Actions checks.
-- 124 passing tests.
+- 129 passing tests.
 
 ## Domain Packs
 
@@ -115,6 +130,7 @@ Current packs:
 - Jira Assistant.
 - Zabbix Monitoring.
 - Internal Knowledge Assistant.
+- Trading Assistant.
 - Generic fallback.
 
 ## Agent Blueprint
@@ -334,7 +350,7 @@ On the project venv in Windows:
 .\venv\Scripts\python.exe -m pytest
 ```
 
-Current test status: 124 passing.
+Current test status: 129 passing.
 
 The tests cover parser safety, path validation, project building, ZIP creation, fallback behavior, idea analysis, interview flow, domain packs, assistant architecture, agent blueprints, access control, generation locks, and prompt enrichment. They do not call real OpenAI or Anthropic APIs.
 

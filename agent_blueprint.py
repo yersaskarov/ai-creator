@@ -118,6 +118,47 @@ DOMAIN_DEFAULTS: dict[str, dict[str, list[str]]] = {
             "answers include source references when available",
         ],
     },
+    "trading": {
+        "inputs": [
+            "TradingView alerts",
+            "Manual trade entries",
+            "Economic calendar data",
+        ],
+        "outputs": [
+            "Telegram notifications",
+            "Trade journal",
+            "Statistics reports",
+            "Weekly review",
+        ],
+        "agent_actions": [
+            "Track trades",
+            "Calculate RR",
+            "Calculate winrate",
+            "Track daily loss",
+            "Generate reports",
+        ],
+        "data_storage": [
+            "trade journal entries",
+            "TradingView alert history",
+            "risk and drawdown metrics",
+            "weekly review snapshots",
+        ],
+        "security_notes": [
+            "Never store broker credentials",
+            "Never auto-trade without explicit approval",
+            "Protect webhook secrets",
+        ],
+        "deployment_notes": [
+            "run webhook receiver behind HTTPS",
+            "store risk settings in environment or admin configuration",
+        ],
+        "acceptance_criteria": [
+            "Trade journal stores trades",
+            "Statistics are reproducible",
+            "RR calculations are correct",
+            "Daily drawdown is tracked",
+        ],
+    },
     "generic": {
         "inputs": ["user messages", "configuration values"],
         "outputs": ["Telegram responses", "generated result"],
