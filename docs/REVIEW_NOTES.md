@@ -1,6 +1,36 @@
 # AI Creator Review Notes
 
-## v0.6 status (current)
+## v0.7 status (current)
+
+AI Creator v0.7 is the production hardening release. All 151 tests pass. The project is
+VPS-ready: a fresh Ubuntu server can run it with `git clone` + `.env` + `docker compose up -d`.
+
+Changes since v0.6:
+
+- **Dependency pinning**: `requirements.txt` now pins all 29 runtime packages (direct + transitive)
+  to exact versions for reproducible Docker builds. `requirements-dev.txt` similarly pins pytest
+  and its 5 transitive deps.
+- **Dockerfile — non-root user**: `botuser` account created via `useradd`; all `/app` files
+  transferred to `botuser:botuser`; `USER botuser` ensures the process never runs as root.
+- **Dockerfile — HEALTHCHECK**: `python -c "import aiogram, anthropic, openai"` runs every 60 s
+  (start delay 30 s, 3 retries). Verifies the Python environment is intact without network calls.
+- **Dockerfile — pip upgrade**: `pip install --upgrade pip` before installing deps prevents
+  metadata parsing issues with newer package formats.
+- **docker-compose.yml — named volume**: `generated_projects` is now a Docker-managed named
+  volume. This solves the permission problem for the non-root user (Docker initialises the volume
+  with the container directory's ownership) and persists project files across restarts.
+- **docker-compose.yml — log rotation**: `json-file` driver with `max-size: 10m` and
+  `max-file: 3` prevents unbounded log growth on a VPS.
+- **`.gitignore`**: added `pytest_tmp/` and `*.pyc`.
+- **`pytest.ini`**: `addopts = --basetemp=pytest_tmp` makes `pytest` work correctly on Windows
+  without a manual `--basetemp` flag; CI on Linux is unaffected.
+- **CLAUDE.md**: updated test count (129 → 151) and module count (12 → 13).
+- **README.md / README_RU.md**: status updated to v0.7; outdated Docker limitation removed;
+  roadmap updated; link to `docs/DEPLOYMENT.md` added.
+- **`docs/DEPLOYMENT.md`**: new full VPS deployment guide covering Ubuntu prep, Docker install,
+  clone, .env, first launch, logs, update, restart, stop, backup, and troubleshooting.
+
+## v0.6 status (archived)
 
 AI Creator v0.6 is a released prototype with 151 passing tests, security hardening, and a Trading Assistant domain pack.
 

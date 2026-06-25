@@ -4,11 +4,11 @@
 
 **AI Creator** — прототип платформы, которая превращает описание рабочей проблемы в стартовый проект Telegram-бота или AI-ассистента, упакованный в ZIP-архив.
 
-Статус: v0.6 prototype  
+Статус: v0.7  
 Тесты: 151 passing  
-Docker: поддерживается  
+Docker: production-ready (non-root user, HEALTHCHECK, пиннинг зависимостей)  
 CI: GitHub Actions + Gitleaks  
-Стадия: контролируемый пилот / portfolio project
+Стадия: VPS-ready / portfolio project
 
 ---
 
@@ -194,6 +194,8 @@ docker compose up -d --build
 docker compose down
 ```
 
+Полная пошаговая инструкция деплоя на Ubuntu VPS: [docs/DEPLOYMENT.md](DEPLOYMENT.md).
+
 ---
 
 ## Переменные окружения
@@ -236,12 +238,11 @@ python -m pytest
 
 ## Ограничения
 
-- Это прототип, не production-ready система.
 - Generated projects нужно проверять человеком перед использованием.
-- FSM state хранится в памяти (MemoryStorage) — состояние теряется при перезапуске бота.
+- FSM state хранится в памяти (MemoryStorage) — состояние сессии теряется при перезапуске бота.
 - Нет Redis FSM.
 - Нет queue/worker для фоновой генерации.
-- Нет полноценного мониторинга и healthcheck.
+- Нет полноценного мониторинга. Healthcheck контейнера добавлен в Dockerfile.
 - Domain detection — rule-based keyword matching.
 - Agent Blueprint — rule-based, не ML.
 - Некоторые нишевые сценарии (ICT/Smart Money, Economic Calendar) генерируют generic blueprint.
@@ -250,21 +251,17 @@ python -m pytest
 
 ## Roadmap
 
-### v0.7
+### v0.7 (текущая)
 
-- Аудит и улучшение Trading Pack (Russian keywords, ICT, economic calendar)
-- Accountant Pack
-- Warehouse Pack
-- Support Desk Pack
-- Logistics Pack 2.0 (Della / ATI интеграции)
-- Cooldown warning на старте опроса, а не в конце
-- Feedback loop от пилотных пользователей
+- Production hardening: non-root Docker user, HEALTHCHECK, ротация логов.
+- Воспроизводимые сборки: все зависимости зафиксированы.
+- Инструкция деплоя на VPS добавлена (`docs/DEPLOYMENT.md`).
+- Git hygiene: `pytest_tmp/` добавлен в `.gitignore`, добавлен `pytest.ini`.
 
 ### v0.8
 
-- Redis FSM (persistence при перезапуске)
-- Queue / worker для фоновой генерации
-- Мониторинг и healthcheck
-- Non-root Docker user
-- Structured logging
-- Rate limits и user quotas
+- Новые Domain Packs: бухгалтерия, склад, HR, поддержка.
+- Redis FSM (persistence при перезапуске).
+- Queue / worker для фоновой генерации.
+- Structured logging с request ID.
+- Rate limits и user quotas.

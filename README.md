@@ -7,11 +7,11 @@
 
 **AI Creator** is an assistant builder platform prototype that turns a plain-language work problem into a generated Telegram bot or AI-agent starter project — packaged as a ZIP archive delivered through Telegram.
 
-Status: v0.6  
+Status: v0.7  
 Tests: 151 passing  
-Docker: supported  
+Docker: production-ready (non-root user, HEALTHCHECK, pinned deps)  
 CI: GitHub Actions + Gitleaks secret scanning  
-Stage: controlled pilot / portfolio project
+Stage: VPS-ready / portfolio project
 
 ## What It Is
 
@@ -339,6 +339,8 @@ Stop:
 docker compose down
 ```
 
+For a complete step-by-step VPS deployment guide see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Testing
 
 Syntax checks:
@@ -365,34 +367,30 @@ The tests cover parser safety, path validation, project building, ZIP creation, 
 
 ## Limitations
 
-- Not ready for unattended production use yet.
-- FSM state is still in memory; Redis FSM is not implemented.
+- FSM state is in memory; Redis FSM is not implemented (state is lost on restart).
 - No distributed queue or worker for long-running generation.
-- No monitoring dashboard or healthcheck endpoint.
+- No monitoring dashboard. Container healthcheck is provided in the Dockerfile.
 - No user quotas or rate limiting yet.
 - Domain detection is rule-based.
 - Agent Blueprint generation is rule-based.
 - Generated projects need human review before use.
-- Docker still needs production hardening such as a non-root user.
 
 ## Roadmap
 
-v0.7:
+v0.7 (current):
 
-- Run a real controlled pilot with lead feedback.
-- Add more Domain Packs: accounting, warehouse, HR, legal, support.
-- Improve generated project quality.
-- Add Telegram preview of detected domain and Agent Blueprint.
-- Let users confirm or adjust the detected domain before generation.
+- Production hardening: non-root Docker user, HEALTHCHECK, log rotation.
+- Reproducible builds: all dependencies pinned.
+- VPS Deployment Guide added (`docs/DEPLOYMENT.md`).
+- Git hygiene: `pytest_tmp/` gitignored, `pytest.ini` added.
 
 v0.8:
 
-- Redis FSM.
-- Queue / worker.
-- Monitoring and healthcheck.
-- Non-root Docker user.
-- Structured logging.
-- Rate limits and quotas.
+- More Domain Packs: accounting, warehouse, HR, support.
+- Redis FSM (persistent state on restart).
+- Queue / worker for long-running generation.
+- Structured logging with request IDs.
+- Rate limits and user quotas.
 
 ## Security
 

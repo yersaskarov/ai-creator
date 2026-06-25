@@ -50,7 +50,7 @@ python -m py_compile bot.py ai_generator.py templates.py project_builder.py \
 pytest
 ```
 
-Current baseline: **129 tests passing** (12 test modules under `tests/`).
+Current baseline: **151 tests passing** (13 test modules under `tests/`).
 Always run after any code change. Do not mark a task done if tests are red.
 
 ## Safe commit workflow
