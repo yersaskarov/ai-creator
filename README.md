@@ -2,16 +2,39 @@
 
 [![Tests](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml/badge.svg)](https://github.com/yersaskarov/ai-creator/actions/workflows/tests.yml)
 [![Secret Scanning](https://github.com/yersaskarov/ai-creator/actions/workflows/secret_scanning.yml/badge.svg)](https://github.com/yersaskarov/ai-creator/actions/workflows/secret_scanning.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![aiogram 3](https://img.shields.io/badge/aiogram-3-009688.svg)](https://aiogram.dev/)
 
 > 🇷🇺 Russian version: [docs/README_RU.md](docs/README_RU.md)
 
 **AI Creator** is an assistant builder platform prototype that turns a plain-language work problem into a generated Telegram bot or AI-agent starter project — packaged as a ZIP archive delivered through Telegram.
 
-Status: v0.7  
+Status: v0.7.1  
 Tests: 151 passing  
 Docker: production-ready (non-root user, HEALTHCHECK, pinned deps)  
 CI: GitHub Actions + Gitleaks secret scanning  
 Stage: VPS-ready / portfolio project
+
+## Table of Contents
+
+- [What It Is](#what-it-is)
+- [Quick Start](#quick-start)
+- [Example Use Cases](#example-use-cases)
+- [Current Pipeline](#current-pipeline)
+- [Domain Packs](#domain-packs)
+- [Architecture](#architecture)
+- [Setup](#setup)
+- [Configuration](#configuration)
+- [Docker](#docker)
+- [Testing](#testing)
+- [Security And Safety](#security-and-safety)
+- [Limitations](#limitations)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## What It Is
 
@@ -33,6 +56,21 @@ Most people describe automation needs as messy workplace stories, not as softwar
 - packages the result as a ZIP archive in Telegram.
 
 This makes generated projects more grounded than a generic one-shot prompt.
+
+## Quick Start
+
+```bash
+git clone https://github.com/yersaskarov/ai-creator.git
+cd ai-creator
+cp .env.example .env          # fill in TELEGRAM_BOT_TOKEN + AI provider
+docker compose up -d --build
+```
+
+Open your bot in Telegram and send `/start`.
+
+> Full VPS deployment guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+---
 
 ## Example Use Cases
 
@@ -198,23 +236,33 @@ flowchart TD
 
 ```text
 .
-|-- ai_generator.py
-|-- agent_blueprint.py
-|-- assistant_architect.py
-|-- bot.py
-|-- domain_packs.py
-|-- idea_analyzer.py
-|-- interview_builder.py
-|-- project_builder.py
-|-- runtime_guards.py
-|-- templates.py
-|-- zip_utils.py
+|-- bot.py                     ← entry point
+|-- ai_generator.py            ← Claude / OpenAI integration
+|-- agent_blueprint.py         ← product specification builder
+|-- assistant_architect.py     ← architecture design layer
+|-- domain_packs.py            ← domain knowledge (7 packs)
+|-- idea_analyzer.py           ← idea → project type detection
+|-- interview_builder.py       ← clarifying questions
+|-- path_safety.py             ← path traversal protection
+|-- project_builder.py         ← safe file writing
+|-- runtime_guards.py          ← access control, lock, cooldown
+|-- templates.py               ← fallback project templates
+|-- zip_utils.py               ← ZIP creation
+|-- Dockerfile
 |-- docker-compose.yml
-|-- requirements.txt
-|-- requirements-dev.txt
-|-- tests/
+|-- requirements.txt           ← pinned runtime deps
+|-- requirements-dev.txt       ← pinned dev deps
+|-- pytest.ini
 |-- .env.example
-`-- README.md
+|-- CHANGELOG.md
+|-- CONTRIBUTING.md
+|-- LICENSE
+|-- SECURITY.md
+|-- tests/
+`-- docs/
+    |-- DEPLOYMENT.md          ← VPS deployment guide
+    |-- README_RU.md           ← Russian documentation
+    `-- REVIEW_NOTES.md        ← version history
 ```
 
 ## Security And Safety
@@ -409,6 +457,15 @@ Generation safety:
 - All user input is sanitised (newlines collapsed) before entering prompts.
 - Path traversal is blocked at two independent layers (`path_safety.py`).
 
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
+opening a pull request.
+
+For security issues, see [SECURITY.md](SECURITY.md).
+
+---
+
 ## Portfolio And Learning Value
 
 AI Creator demonstrates:
@@ -422,3 +479,9 @@ AI Creator demonstrates:
 - Docker and CI usage;
 - test coverage across core behavior;
 - product thinking around real work assistants.
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 Yersultan Askarov

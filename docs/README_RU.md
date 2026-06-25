@@ -4,7 +4,7 @@
 
 **AI Creator** — прототип платформы, которая превращает описание рабочей проблемы в стартовый проект Telegram-бота или AI-ассистента, упакованный в ZIP-архив.
 
-Статус: v0.7  
+Статус: v0.7.1  
 Тесты: 151 passing  
 Docker: production-ready (non-root user, HEALTHCHECK, пиннинг зависимостей)  
 CI: GitHub Actions + Gitleaks  
@@ -265,3 +265,18 @@ python -m pytest
 - Queue / worker для фоновой генерации.
 - Structured logging с request ID.
 - Rate limits и user quotas.
+
+---
+
+## Участие в разработке
+
+Contributions приветствуются. Прочитайте [CONTRIBUTING.md](../CONTRIBUTING.md) перед
+открытием Pull Request.
+
+По вопросам безопасности — [SECURITY.md](../SECURITY.md).
+
+---
+
+## Лицензия
+
+[MIT](../LICENSE) © 2026 Yersultan Askarov

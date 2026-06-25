@@ -1,6 +1,26 @@
 # AI Creator Review Notes
 
-## v0.7 status (current)
+## v0.7.1 status (current)
+
+Open Source Polish release. No functional changes; no architecture changes; 151 tests pass.
+
+Changes since v0.7:
+
+- **`LICENSE`**: MIT license added.
+- **`CHANGELOG.md`**: full release history from v0.1 to v0.7.1.
+- **`CONTRIBUTING.md`**: contributor guide covering setup, tests, PR rules, commit style, code style.
+- **`SECURITY.md`**: vulnerability reporting policy, supported versions, disclosure timeline.
+- **`CODE_OF_CONDUCT.md`**: community standards based on Contributor Covenant 2.1.
+- **`.github/ISSUE_TEMPLATE/bug_report.md`**: structured bug report template.
+- **`.github/ISSUE_TEMPLATE/feature_request.md`**: structured feature request template.
+- **`.github/PULL_REQUEST_TEMPLATE.md`**: PR checklist (tests, security, CHANGELOG).
+- **`.github/dependabot.yml`**: automated weekly pip updates + monthly Actions updates.
+- **`.editorconfig`**: consistent editor settings (UTF-8, LF, 4-space indent for Python, 2-space for YAML).
+- **`README.md`**: license badge (MIT), Python 3.12 badge, aiogram 3 badge, Table of Contents,
+  Quick Start section, updated Project Structure, Contributing section, License section; status v0.7.1.
+- **`docs/README_RU.md`**: Contributing and License sections; status v0.7.1.
+
+## v0.7 status (archived)
 
 AI Creator v0.7 is the production hardening release. All 151 tests pass. The project is
 VPS-ready: a fresh Ubuntu server can run it with `git clone` + `.env` + `docker compose up -d`.
