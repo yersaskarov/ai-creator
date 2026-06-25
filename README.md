@@ -425,7 +425,7 @@ The tests cover parser safety, path validation, project building, ZIP creation, 
 
 ## Roadmap
 
-v0.7 (current):
+Recently completed (v0.7):
 
 - Production hardening: non-root Docker user, HEALTHCHECK, log rotation.
 - Reproducible builds: all dependencies pinned.

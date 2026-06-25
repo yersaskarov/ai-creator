@@ -33,6 +33,8 @@ What actually happened.
 
 ## Logs
 
+Do not paste real tokens, API keys, `.env` values, or other secrets. Redact them first.
+
 ```
 Paste relevant log output here.
 ```

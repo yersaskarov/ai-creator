@@ -251,7 +251,7 @@ python -m pytest
 
 ## Roadmap
 
-### v0.7 (текущая)
+### Недавно завершено (v0.7)
 
 - Production hardening: non-root Docker user, HEALTHCHECK, ротация логов.
 - Воспроизводимые сборки: все зависимости зафиксированы.
